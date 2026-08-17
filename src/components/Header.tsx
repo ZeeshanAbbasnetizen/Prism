@@ -20,53 +20,59 @@ export const Header: React.FC<HeaderProps> = ({
   historyCount = 0,
 }) => {
   return (
-    <header className="w-full border-b border-zinc-800 bg-black/90 backdrop-blur-sm sticky top-0 z-40">
+    <header className="w-full border-b border-zinc-800/80 bg-black/90 backdrop-blur-md sticky top-0 z-40 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
         {/* Left Brand & Navigation Tabs */}
         <div className="flex items-center gap-6 sm:gap-8">
           {/* Brand Logo */}
           <div
-            className="flex items-center cursor-pointer"
+            className="flex items-center cursor-pointer group"
             onClick={() => onTabChange("creator")}
           >
-            <PrismLogo size={20} withText={true} textClassName="text-xs font-bold" />
+            <PrismLogo
+              size={20}
+              withText={true}
+              textClassName="text-xs font-bold tracking-[0.24em] group-hover:text-zinc-300 transition-colors"
+            />
           </div>
 
           {/* Navigation Switcher */}
           <nav className="flex items-center bg-zinc-950 p-1 rounded-lg border border-zinc-800/80 text-xs">
             <button
               onClick={() => onTabChange("creator")}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-all duration-150 active:scale-95 ${
                 activeTab === "creator"
                   ? "bg-zinc-800 text-white shadow-sm"
-                  : "text-zinc-400 hover:text-zinc-200"
+                  : "text-zinc-400 hover:text-white hover:bg-zinc-900/50"
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Studio</span>
             </button>
+
             <button
               onClick={() => onTabChange("queue")}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-all duration-150 active:scale-95 ${
                 activeTab === "queue"
                   ? "bg-zinc-800 text-white shadow-sm"
-                  : "text-zinc-400 hover:text-zinc-200"
+                  : "text-zinc-400 hover:text-white hover:bg-zinc-900/50"
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
               <span>Queue</span>
               {pendingCount > 0 && (
-                <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-white text-black font-bold">
+                <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-white text-black font-bold animate-pulse">
                   {pendingCount}
                 </span>
               )}
             </button>
+
             <button
               onClick={() => onTabChange("history")}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-medium transition ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-all duration-150 active:scale-95 ${
                 activeTab === "history"
                   ? "bg-zinc-800 text-white shadow-sm"
-                  : "text-zinc-400 hover:text-zinc-200"
+                  : "text-zinc-400 hover:text-white hover:bg-zinc-900/50"
               }`}
             >
               <History className="w-3.5 h-3.5" />
@@ -82,13 +88,12 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right Actions */}
         <div className="flex items-center gap-2">
-          {/* Settings Button */}
           <button
             type="button"
             onClick={onOpenSettings}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 hover:border-zinc-700 transition-all duration-150 active:scale-95 shadow-sm"
           >
-            <Settings className="w-3.5 h-3.5 text-zinc-400" />
+            <Settings className="w-3.5 h-3.5 text-zinc-400 transition-transform group-hover:rotate-45" />
             <span>Settings</span>
           </button>
         </div>

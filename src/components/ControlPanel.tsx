@@ -138,16 +138,16 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   };
 
   return (
-    <div className="w-full space-y-3.5">
+    <div className="w-full space-y-3.5 animate-fade-in-scale">
       {/* 1. URL & Store Input Card */}
-      <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950 space-y-3">
+      <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950 space-y-3 interactive-card">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-semibold text-white flex items-center gap-1.5">
+          <label className="text-xs font-semibold text-white flex items-center gap-1.5 font-heading">
             <Globe className="w-3.5 h-3.5 text-zinc-400" />
             <span>Product URL</span>
           </label>
           {detectedStore && (
-            <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-900 text-zinc-300 border border-zinc-800 font-mono">
+            <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-900 text-zinc-300 border border-zinc-800 font-mono transition-colors">
               {detectedStore}
             </span>
           )}
@@ -159,13 +159,13 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="Paste product link..."
-            className="w-full pl-3 pr-16 py-2.5 rounded-lg bg-black border border-zinc-800 text-white placeholder-zinc-600 text-xs focus:outline-none focus:border-zinc-500 transition"
+            className="w-full pl-3 pr-16 py-2.5 rounded-lg bg-black border border-zinc-800 text-white placeholder-zinc-600 text-xs input-interactive"
           />
           <div className="absolute inset-y-0 right-0 pr-1.5 flex items-center">
             <button
               type="button"
               onClick={handlePaste}
-              className="px-2 py-1 text-[10px] font-medium text-zinc-400 hover:text-white bg-zinc-900 rounded border border-zinc-800 transition"
+              className="px-2.5 py-1 text-[10px] font-medium text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 rounded border border-zinc-800 transition active:scale-95"
             >
               Paste
             </button>
@@ -180,7 +180,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               key={idx}
               type="button"
               onClick={() => setUrl(p.url)}
-              className="px-2 py-0.5 rounded text-[11px] bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition"
+              className="px-2.5 py-0.5 rounded text-[11px] bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700 transition active:scale-95"
             >
               {p.name}
             </button>
@@ -189,7 +189,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
       </div>
 
       {/* 2. Custom Affiliate Tag & Tone Selector */}
-      <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+      <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs interactive-card">
         {/* Affiliate Tag */}
         <div className="space-y-1">
           <label className="text-zinc-400 font-medium flex items-center gap-1 text-[11px]">
@@ -201,7 +201,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             value={affiliateTag}
             onChange={(e) => setAffiliateTag(e.target.value)}
             placeholder="e.g. tag=mydeals-20"
-            className="w-full px-2.5 py-2 rounded-lg bg-black border border-zinc-800 text-white placeholder-zinc-600 text-xs focus:outline-none focus:border-zinc-500 font-mono"
+            className="w-full px-2.5 py-2 rounded-lg bg-black border border-zinc-800 text-white placeholder-zinc-600 text-xs input-interactive font-mono"
           />
         </div>
 
@@ -214,7 +214,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           <select
             value={tone}
             onChange={(e) => setTone(e.target.value as CopyTone)}
-            className="w-full px-2.5 py-2 rounded-lg bg-black border border-zinc-800 text-white text-xs focus:outline-none focus:border-zinc-500"
+            className="w-full px-2.5 py-2 rounded-lg bg-black border border-zinc-800 text-white text-xs input-interactive cursor-pointer"
           >
             {TONE_OPTIONS.map((opt) => (
               <option key={opt.id} value={opt.id} className="bg-zinc-950 text-white">
@@ -230,7 +230,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         type="button"
         onClick={onScrapeAndGenerate}
         disabled={isScraping || isGenerating || !url.trim()}
-        className="w-full py-2.5 rounded-lg bg-white text-black hover:bg-zinc-200 font-medium text-xs flex items-center justify-center gap-2 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+        className="w-full py-2.5 rounded-lg bg-white text-black hover:bg-zinc-200 font-medium text-xs flex items-center justify-center gap-2 btn-interactive disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
       >
         {isScraping || isGenerating ? (
           <>
@@ -239,7 +239,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           </>
         ) : (
           <>
-            <Sparkles className="w-3.5 h-3.5" />
+            <Sparkles className="w-3.5 h-3.5 transition-transform group-hover:rotate-12" />
             <span>{product ? "Regenerate Deal Copy" : "Parse & Generate Copy"}</span>
           </>
         )}
@@ -247,10 +247,10 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
       {/* Error Alert */}
       {error && (
-        <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 text-xs flex items-start gap-2">
+        <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 text-xs flex items-start gap-2 animate-fade-in-up">
           <AlertCircle className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-white">Notice</p>
+            <p className="font-medium text-white font-heading">Notice</p>
             <p className="text-zinc-400 text-[11px]">{error}</p>
           </div>
         </div>
@@ -258,20 +258,20 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
       {/* 4. Editable Copy Area */}
       {copyText && (
-        <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950 space-y-2.5">
+        <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950 space-y-2.5 interactive-card animate-fade-in-up">
           <div className="flex items-center justify-between text-xs text-zinc-400">
-            <span className="flex items-center gap-1.5 font-medium text-zinc-200">
+            <span className="flex items-center gap-1.5 font-medium text-zinc-200 font-heading">
               <Edit3 className="w-3.5 h-3.5 text-zinc-400" />
               <span>Deal Copy</span>
             </span>
-            <span className="text-[10px] text-zinc-500 font-mono">HTML</span>
+            <span className="text-[10px] text-zinc-500 font-mono">HTML Live Sync</span>
           </div>
 
           <textarea
             value={copyText}
             onChange={(e) => setCopyText(e.target.value)}
             rows={8}
-            className="w-full p-3 rounded-lg bg-black border border-zinc-800 text-zinc-200 text-xs font-mono leading-relaxed focus:outline-none focus:border-zinc-500 transition resize-none"
+            className="w-full p-3 rounded-lg bg-black border border-zinc-800 text-zinc-200 text-xs font-mono leading-relaxed input-interactive resize-none"
             placeholder="Generated deal copy..."
           />
 
@@ -281,7 +281,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               type="button"
               onClick={onPublishTelegram}
               disabled={isPublishing || !copyText.trim()}
-              className="py-2.5 rounded-lg bg-white text-black hover:bg-zinc-200 font-medium text-xs flex items-center justify-center gap-1.5 transition disabled:opacity-40"
+              className="py-2.5 rounded-lg bg-white text-black hover:bg-zinc-200 font-medium text-xs flex items-center justify-center gap-1.5 btn-interactive disabled:opacity-40 shadow-sm"
             >
               {isPublishing ? (
                 <>
@@ -303,7 +303,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 setShowScheduleModal(true);
               }}
               disabled={isScheduling || !copyText.trim()}
-              className="py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 font-medium text-xs flex items-center justify-center gap-1.5 transition disabled:opacity-40"
+              className="py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 hover:border-zinc-700 font-medium text-xs flex items-center justify-center gap-1.5 btn-interactive disabled:opacity-40"
             >
               {isScheduling ? (
                 <>
@@ -324,19 +324,19 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
       {/* Publish or Schedule Status Toast */}
       {publishStatus && (
         <div
-          className={`p-3 rounded-lg border text-xs flex items-start gap-2 ${
+          className={`p-3 rounded-lg border text-xs flex items-start gap-2 animate-fade-in-up ${
             publishStatus.success
               ? "bg-zinc-900 border-zinc-700 text-white"
               : "bg-zinc-950 border-zinc-800 text-zinc-300"
           }`}
         >
           {publishStatus.success ? (
-            <CheckCircle2 className="w-4 h-4 text-white shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-4 h-4 text-white shrink-0 mt-0.5 animate-bounce" style={{ animationIterationCount: 2 }} />
           ) : (
             <AlertCircle className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
           )}
           <div>
-            <p className="font-medium text-white">{publishStatus.success ? "Success" : "Notice"}</p>
+            <p className="font-medium text-white font-heading">{publishStatus.success ? "Success" : "Notice"}</p>
             <p className="text-zinc-400 text-[11px] mt-0.5">{publishStatus.message}</p>
           </div>
         </div>
@@ -344,16 +344,16 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
       {/* Schedule Modal */}
       {showScheduleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in-scale">
           <div className="w-full max-w-sm rounded-xl border border-zinc-800 bg-zinc-950 p-5 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-white" />
-                <h3 className="text-sm font-semibold text-white">Schedule Release</h3>
+                <h3 className="text-sm font-semibold text-white font-heading">Schedule Release</h3>
               </div>
               <button
                 onClick={() => setShowScheduleModal(false)}
-                className="text-zinc-500 hover:text-white"
+                className="text-zinc-500 hover:text-white transition active:scale-95"
               >
                 ✕
               </button>
@@ -367,7 +367,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                   value={scheduleTime}
                   onChange={(e) => setScheduleTime(e.target.value)}
                   required
-                  className="w-full px-3 py-2 rounded-lg bg-black border border-zinc-800 text-white text-xs focus:outline-none focus:border-zinc-500"
+                  className="w-full px-3 py-2 rounded-lg bg-black border border-zinc-800 text-white text-xs input-interactive"
                 />
 
                 {/* Quick Time Presets */}
@@ -376,21 +376,21 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                   <button
                     type="button"
                     onClick={() => setPresetTime(5)}
-                    className="px-2 py-0.5 rounded text-[10px] bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800"
+                    className="px-2 py-0.5 rounded text-[10px] bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition active:scale-95"
                   >
                     +5 min
                   </button>
                   <button
                     type="button"
                     onClick={() => setPresetTime(15)}
-                    className="px-2 py-0.5 rounded text-[10px] bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800"
+                    className="px-2 py-0.5 rounded text-[10px] bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition active:scale-95"
                   >
                     +15 min
                   </button>
                   <button
                     type="button"
                     onClick={() => setPresetTime(60)}
-                    className="px-2 py-0.5 rounded text-[10px] bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800"
+                    className="px-2 py-0.5 rounded text-[10px] bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition active:scale-95"
                   >
                     +1 hr
                   </button>
@@ -401,14 +401,14 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowScheduleModal(false)}
-                  className="px-3 py-1.5 rounded-lg bg-zinc-900 text-zinc-300 text-xs hover:bg-zinc-800"
+                  className="px-3 py-1.5 rounded-lg bg-zinc-900 text-zinc-300 text-xs hover:bg-zinc-800 transition active:scale-95"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isScheduling}
-                  className="px-4 py-1.5 rounded-lg bg-white text-black font-medium text-xs hover:bg-zinc-200 flex items-center gap-1.5 transition"
+                  className="px-4 py-1.5 rounded-lg bg-white text-black font-medium text-xs hover:bg-zinc-200 flex items-center gap-1.5 btn-interactive shadow-sm"
                 >
                   {isScheduling ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                   <span>Add to Queue</span>

@@ -61,12 +61,12 @@ export const SocialMockupPreview: React.FC<SocialMockupPreviewProps> = ({
 
   if (!product) {
     return (
-      <div className="h-full min-h-[460px] rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 p-8 flex flex-col items-center justify-center text-center space-y-3">
-        <div className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500">
+      <div className="h-full min-h-[460px] rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 p-8 flex flex-col items-center justify-center text-center space-y-3 animate-fade-in-scale">
+        <div className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 animate-float-subtle">
           <Layers className="w-5 h-5" />
         </div>
         <div className="space-y-1 max-w-xs">
-          <p className="text-sm font-medium text-white">Post Preview</p>
+          <p className="text-sm font-medium text-white font-heading">Post Preview</p>
           <p className="text-xs text-zinc-500">
             Paste a product link on the left to extract metadata and view real-time distribution rendering.
           </p>
@@ -76,12 +76,12 @@ export const SocialMockupPreview: React.FC<SocialMockupPreviewProps> = ({
   }
 
   return (
-    <div className="w-full rounded-xl border border-zinc-800 bg-zinc-950 overflow-hidden flex flex-col shadow-xl">
+    <div className="w-full rounded-xl border border-zinc-800 bg-zinc-950 overflow-hidden flex flex-col shadow-xl interactive-card animate-fade-in-scale">
       {/* Header Tabs */}
       <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between bg-black text-xs">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-white tracking-tight">Channel Rendering</span>
-          <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-900 text-zinc-400 border border-zinc-800">
+          <span className="font-semibold text-white tracking-tight font-heading">Channel Rendering</span>
+          <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 font-mono">
             Telegram
           </span>
         </div>
@@ -89,9 +89,9 @@ export const SocialMockupPreview: React.FC<SocialMockupPreviewProps> = ({
         <div className="flex items-center gap-1">
           <button
             onClick={() => setActiveTab("telegram")}
-            className={`px-2.5 py-1 rounded transition ${
+            className={`px-2.5 py-1 rounded transition-all duration-150 active:scale-95 ${
               activeTab === "telegram"
-                ? "bg-zinc-800 text-white font-medium"
+                ? "bg-zinc-800 text-white font-medium shadow-sm"
                 : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
@@ -99,9 +99,9 @@ export const SocialMockupPreview: React.FC<SocialMockupPreviewProps> = ({
           </button>
           <button
             onClick={() => setActiveTab("html")}
-            className={`px-2.5 py-1 rounded transition ${
+            className={`px-2.5 py-1 rounded transition-all duration-150 active:scale-95 ${
               activeTab === "html"
-                ? "bg-zinc-800 text-white font-medium"
+                ? "bg-zinc-800 text-white font-medium shadow-sm"
                 : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
@@ -109,9 +109,9 @@ export const SocialMockupPreview: React.FC<SocialMockupPreviewProps> = ({
           </button>
           <button
             onClick={() => setActiveTab("fields")}
-            className={`px-2.5 py-1 rounded transition ${
+            className={`px-2.5 py-1 rounded transition-all duration-150 active:scale-95 ${
               activeTab === "fields"
-                ? "bg-zinc-800 text-white font-medium"
+                ? "bg-zinc-800 text-white font-medium shadow-sm"
                 : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
@@ -122,9 +122,9 @@ export const SocialMockupPreview: React.FC<SocialMockupPreviewProps> = ({
 
       {/* Tab: Telegram Mockup */}
       {activeTab === "telegram" && (
-        <div className="p-5 flex-1 flex flex-col justify-between space-y-4 bg-black/40">
+        <div className="p-5 flex-1 flex flex-col justify-between space-y-4 bg-black/40 animate-fade-in-up">
           {/* Telegram Channel Post Container */}
-          <div className="w-full rounded-xl border border-zinc-800 bg-[#17212b] overflow-hidden text-white shadow-2xl">
+          <div className="w-full rounded-xl border border-zinc-800 bg-[#17212b] overflow-hidden text-white shadow-2xl transition-all duration-200 hover:border-zinc-700">
             {/* Telegram Channel Header */}
             <div className="px-4 py-3 border-b border-white/5 bg-[#202b36] flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -133,7 +133,7 @@ export const SocialMockupPreview: React.FC<SocialMockupPreviewProps> = ({
                 </div>
                 <div>
                   <div className="flex items-center gap-1">
-                    <span className="text-xs font-semibold text-white">{channelName}</span>
+                    <span className="text-xs font-semibold text-white font-heading">{channelName}</span>
                     <span className="text-[10px] px-1 py-0.2 rounded bg-zinc-700 text-zinc-300 font-medium">
                       channel
                     </span>
@@ -142,19 +142,19 @@ export const SocialMockupPreview: React.FC<SocialMockupPreviewProps> = ({
                 </div>
               </div>
 
-              <span className="text-[10px] text-zinc-400">
+              <span className="text-[10px] text-zinc-400 font-mono">
                 {formattedTime}
               </span>
             </div>
 
             {/* Post Photo with Price Badge */}
-            <div className="relative aspect-video w-full bg-black flex items-center justify-center overflow-hidden border-b border-white/5">
+            <div className="relative aspect-video w-full bg-black flex items-center justify-center overflow-hidden border-b border-white/5 group/img">
               {!imageError && product.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={product.image}
                   alt={product.title}
-                  className="w-full h-full object-contain p-2"
+                  className="w-full h-full object-contain p-2 transition-transform duration-300 group-hover/img:scale-105"
                   onError={() => setImageError(true)}
                 />
               ) : (
@@ -163,14 +163,14 @@ export const SocialMockupPreview: React.FC<SocialMockupPreviewProps> = ({
 
               {/* Dynamic Price Badge Overlay */}
               {product.price && (
-                <div className="absolute bottom-3 left-3 px-3 py-1 rounded-md bg-black/85 backdrop-blur-md border border-white/10 text-white font-bold text-xs flex items-center gap-1 shadow-lg">
+                <div className="absolute bottom-3 left-3 px-3 py-1 rounded-md bg-black/85 backdrop-blur-md border border-white/10 text-white font-bold text-xs flex items-center gap-1 shadow-lg transition-transform duration-200 hover:scale-105">
                   <DollarSign className="w-3.5 h-3.5 text-zinc-400" />
                   <span>{formatPriceDisplay()}</span>
                 </div>
               )}
 
               {/* Store Tag */}
-              <div className="absolute top-3 right-3 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md border border-white/10 text-[10px] font-medium text-zinc-300">
+              <div className="absolute top-3 right-3 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md border border-white/10 text-[10px] font-medium text-zinc-300 font-mono">
                 {product.siteName}
               </div>
             </div>
@@ -190,7 +190,7 @@ export const SocialMockupPreview: React.FC<SocialMockupPreviewProps> = ({
                   href={finalAffiliateUrl || product.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-2.5 px-4 rounded-lg bg-[#2b5278] hover:bg-[#33618d] text-white font-medium text-xs flex items-center justify-center gap-2 transition shadow"
+                  className="w-full py-2.5 px-4 rounded-lg bg-[#2b5278] hover:bg-[#33618d] text-white font-medium text-xs flex items-center justify-center gap-2 transition-all duration-150 active:scale-98 shadow"
                 >
                   <span>Buy on {product.siteName}</span>
                   <ExternalLink className="w-3.5 h-3.5 text-zinc-300" />
@@ -203,16 +203,16 @@ export const SocialMockupPreview: React.FC<SocialMockupPreviewProps> = ({
 
       {/* Tab: Raw HTML */}
       {activeTab === "html" && (
-        <div className="p-4 flex-1 space-y-2 font-mono text-xs">
+        <div className="p-4 flex-1 space-y-2 font-mono text-xs animate-fade-in-up">
           <div className="flex items-center justify-between text-zinc-400 pb-1">
             <span>Formatted HTML</span>
             <button
               onClick={handleCopyRaw}
-              className="flex items-center gap-1 text-zinc-300 hover:text-white transition"
+              className="flex items-center gap-1 text-zinc-300 hover:text-white px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 transition active:scale-95"
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-white" />
+                  <Check className="w-3.5 h-3.5 text-white animate-bounce" style={{ animationIterationCount: 2 }} />
                   <span>Copied</span>
                 </>
               ) : (
@@ -231,7 +231,7 @@ export const SocialMockupPreview: React.FC<SocialMockupPreviewProps> = ({
 
       {/* Tab: Meta Fields */}
       {activeTab === "fields" && (
-        <div className="p-4 flex-1">
+        <div className="p-4 flex-1 animate-fade-in-up">
           <table className="w-full text-left text-xs">
             <tbody className="divide-y divide-zinc-800">
               <tr>

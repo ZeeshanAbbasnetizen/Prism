@@ -4,18 +4,14 @@ import React, { useState, useEffect } from "react";
 import { ParsedHistoryItem, HistoryApiResponse } from "@/types/scraper";
 import {
   Search,
-  ExternalLink,
   Trash2,
   Sparkles,
   Copy,
   Check,
   RefreshCw,
-  Clock,
   Globe,
-  DollarSign,
   Layers,
   ArrowUpRight,
-  SlidersHorizontal,
 } from "lucide-react";
 import { formatInKarachi } from "@/lib/dateUtils";
 
@@ -33,7 +29,6 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "table">("list");
 
   const fetchHistory = async (silent = false) => {
     if (!silent) setIsLoading(true);
@@ -100,7 +95,6 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
     }
   };
 
-  // Extract unique stores for filtering
   const stores = Array.from(new Set(items.map((i) => i.site_name).filter(Boolean)));
 
   const filteredItems = items.filter((item) => {
@@ -116,37 +110,37 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
   });
 
   return (
-    <div className="w-full space-y-5 text-white">
+    <div className="w-full space-y-4 text-white animate-fade-in-up">
       {/* Top Stats Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950">
+        <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950 interactive-card">
           <span className="text-xs text-zinc-500 font-medium block">Total Parsed</span>
-          <span className="text-2xl font-bold text-white tracking-tight mt-1 block">
+          <span className="text-2xl font-bold text-white tracking-tight mt-1 block font-heading">
             {items.length}
           </span>
         </div>
 
-        <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950">
+        <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950 interactive-card">
           <span className="text-xs text-zinc-500 font-medium block">Unique Stores</span>
-          <span className="text-2xl font-bold text-white tracking-tight mt-1 block">
+          <span className="text-2xl font-bold text-white tracking-tight mt-1 block font-heading">
             {stores.length}
           </span>
         </div>
 
-        <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950">
-          <span className="text-xs text-zinc-500 font-medium block">Most Recent Store</span>
-          <span className="text-sm font-semibold text-zinc-300 tracking-tight mt-2 block truncate">
+        <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950 interactive-card">
+          <span className="text-xs text-zinc-500 font-medium block">Latest Store</span>
+          <span className="text-sm font-semibold text-zinc-300 tracking-tight mt-2 block truncate font-mono">
             {items[0]?.site_name || "None"}
           </span>
         </div>
 
-        <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950 flex flex-col justify-between">
+        <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950 flex flex-col justify-between interactive-card">
           <span className="text-xs text-zinc-500 font-medium block">Actions</span>
           <button
             type="button"
             onClick={handleClearAll}
             disabled={items.length === 0}
-            className="text-xs font-medium text-zinc-400 hover:text-red-400 transition text-left disabled:opacity-30 disabled:hover:text-zinc-500"
+            className="text-xs font-medium text-zinc-400 hover:text-red-400 transition text-left disabled:opacity-30 disabled:hover:text-zinc-500 active:scale-95"
           >
             Clear History
           </button>
@@ -154,7 +148,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
       </div>
 
       {/* Filter, Search & View Controls */}
-      <div className="p-3.5 rounded-xl border border-zinc-800 bg-zinc-950 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+      <div className="p-3.5 rounded-xl border border-zinc-800 bg-zinc-950 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs interactive-card">
         {/* Search */}
         <div className="relative w-full sm:w-72">
           <input
@@ -162,19 +156,18 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search parsed products..."
-            className="w-full pl-8 pr-3 py-2 rounded-lg bg-black border border-zinc-800 text-white placeholder-zinc-500 text-xs focus:outline-none focus:border-zinc-500"
+            className="w-full pl-8 pr-3 py-2 rounded-lg bg-black border border-zinc-800 text-white placeholder-zinc-500 text-xs input-interactive"
           />
           <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-2.5" />
         </div>
 
-        {/* Store Pills & Actions */}
+        {/* Store Selector & Refresh */}
         <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end overflow-x-auto">
-          {/* Store selector dropdown if many stores */}
           {stores.length > 0 && (
             <select
               value={selectedStore}
               onChange={(e) => setSelectedStore(e.target.value)}
-              className="px-3 py-2 rounded-lg bg-black border border-zinc-800 text-zinc-300 text-xs focus:outline-none focus:border-zinc-500"
+              className="px-3 py-2 rounded-lg bg-black border border-zinc-800 text-zinc-300 text-xs input-interactive cursor-pointer"
             >
               <option value="all">All Stores ({items.length})</option>
               {stores.map((s) => (
@@ -187,7 +180,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
 
           <button
             onClick={() => fetchHistory()}
-            className="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition"
+            className="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700 transition-all duration-150 active:scale-95"
             title="Refresh history"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
@@ -203,11 +196,11 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
         </div>
       ) : filteredItems.length === 0 ? (
         <div className="p-12 rounded-xl border border-dashed border-zinc-800 bg-zinc-950/30 flex flex-col items-center justify-center text-center space-y-3">
-          <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-500">
+          <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-500 animate-float-subtle">
             <Layers className="w-5 h-5" />
           </div>
           <div className="space-y-1 max-w-xs">
-            <p className="text-sm font-semibold text-white">No parsed history yet</p>
+            <p className="text-sm font-semibold text-white font-heading">No parsed history yet</p>
             <p className="text-xs text-zinc-500">
               {searchQuery || selectedStore !== "all"
                 ? "No products matched your search filter."
@@ -221,7 +214,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
             <div
               key={item.id}
               onClick={() => onLoadInStudio(item)}
-              className="p-4 rounded-xl border border-zinc-800 bg-zinc-950 hover:border-zinc-600 transition cursor-pointer flex flex-col md:flex-row items-start md:items-center justify-between gap-4 group"
+              className="p-4 rounded-xl border border-zinc-800 bg-zinc-950 hover:border-zinc-600 transition-all duration-200 cursor-pointer flex flex-col md:flex-row items-start md:items-center justify-between gap-4 interactive-card group/history"
             >
               {/* Product Thumbnail & Core Info */}
               <div className="flex items-center gap-3.5 min-w-0 flex-1">
@@ -231,7 +224,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                     <img
                       src={item.image_url}
                       alt={item.title}
-                      className="w-full h-full object-contain p-1"
+                      className="w-full h-full object-contain p-1 transition-transform duration-300 group-hover/history:scale-105"
                     />
                   ) : (
                     <Globe className="w-4 h-4 text-zinc-600" />
@@ -240,17 +233,17 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
 
                 <div className="min-w-0 flex-1 space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-white truncate group-hover:text-zinc-200">
+                    <span className="text-xs font-semibold text-white truncate font-heading group-hover/history:text-zinc-200 transition-colors">
                       {item.title}
                     </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 shrink-0 font-medium">
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 shrink-0 font-mono">
                       {item.site_name}
                     </span>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-3 text-[11px] text-zinc-400">
                     {item.price && (
-                      <span className="font-semibold text-white">
+                      <span className="font-semibold text-white font-mono">
                         {item.currency || "$"}
                         {item.price}
                       </span>
@@ -271,8 +264,8 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                     e.stopPropagation();
                     onLoadInStudio(item);
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-white text-black hover:bg-zinc-200 text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"
-                  title="Load into Studio to generate deal copy"
+                  className="px-3 py-1.5 rounded-lg bg-white text-black hover:bg-zinc-200 text-xs font-semibold flex items-center gap-1.5 btn-interactive shadow-sm"
+                  title="Load into Studio"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>Open Studio</span>
@@ -281,11 +274,11 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                 <button
                   type="button"
                   onClick={(e) => handleCopyLink(item.url, item.id, e)}
-                  className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition"
+                  className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700 transition-all duration-150 active:scale-95"
                   title="Copy Product URL"
                 >
                   {copiedId === item.id ? (
-                    <Check className="w-3.5 h-3.5 text-white" />
+                    <Check className="w-3.5 h-3.5 text-white animate-bounce" style={{ animationIterationCount: 2 }} />
                   ) : (
                     <Copy className="w-3.5 h-3.5" />
                   )}
@@ -296,7 +289,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition"
+                  className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700 transition-all duration-150 active:scale-95"
                   title="Open in new tab"
                 >
                   <ArrowUpRight className="w-3.5 h-3.5" />
@@ -305,7 +298,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                 <button
                   type="button"
                   onClick={(e) => handleDelete(item.id, e)}
-                  className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-red-400 border border-zinc-800 transition"
+                  className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-red-400 border border-zinc-800 hover:border-zinc-700 transition-all duration-150 active:scale-95"
                   title="Delete from history"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
