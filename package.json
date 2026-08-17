@@ -1,13 +1,14 @@
 {
-  "name": "affiliate-auto-poster",
-  "version": "0.1.0",
+  "name": "prism",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "worker": "tsx scripts/worker.ts"
+    "worker": "tsx scripts/worker.ts",
+    "launch": "cmd /c Start-Prism.bat"
   },
   "dependencies": {
     "@google/genai": "^2.17.1",
