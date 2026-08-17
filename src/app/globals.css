@@ -1,33 +1,124 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
-  --background: #000000;
-  --foreground: #ededed;
+  --background: #08080C;
+  --foreground: #F4F4F5;
+  --prism-coral: #E05B6C;
+  --prism-purple: #8B5CF6;
+  --prism-blue: #3B82F6;
+  --prism-cyan: #00E5D4;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
-/* Custom minimal scrollbar */
+/* Prism Heading Font Utility */
+.font-prism {
+  font-family: 'Outfit', sans-serif;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Glassmorphic Surfaces */
+.glass-panel {
+  background: rgba(14, 14, 20, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel-hover:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(18, 18, 26, 0.8);
+}
+
+.glass-card {
+  background: rgba(10, 10, 15, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Spectrum Accent Gradients */
+.bg-prism-gradient {
+  background: linear-gradient(135deg, #E05B6C 0%, #8B5CF6 45%, #3B82F6 75%, #00E5D4 100%);
+}
+
+.bg-prism-gradient-subtle {
+  background: linear-gradient(135deg, rgba(224, 91, 108, 0.15) 0%, rgba(139, 92, 246, 0.15) 50%, rgba(0, 229, 212, 0.15) 100%);
+}
+
+.text-prism-gradient {
+  background: linear-gradient(135deg, #FF6B81 0%, #A855F7 45%, #38BDF8 80%, #00F5D4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.border-prism-gradient {
+  border-image: linear-gradient(135deg, #E05B6C, #8B5CF6, #00E5D4) 1;
+}
+
+/* Custom Minimal Scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
+
 ::-webkit-scrollbar-track {
-  background: #000000;
+  background: #08080C;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
-  border-radius: 4px;
+  background: #272732;
+  border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: #3F3F50;
+}
+
+/* Selection State */
+::selection {
+  background: rgba(139, 92, 246, 0.35);
+  color: #FFFFFF;
+}
+
+/* Animations */
+@keyframes prismPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 24px rgba(0, 229, 212, 0.6));
+  }
+}
+
+.animate-prism-pulse {
+  animation: prismPulse 4s ease-in-out infinite;
+}
+
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-float {
+  animation: floatSlow 6s ease-in-out infinite;
 }

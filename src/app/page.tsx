@@ -7,6 +7,7 @@ import { SocialMockupPreview } from "@/components/SocialMockupPreview";
 import { QueueManager } from "@/components/QueueManager";
 import { SettingsModal } from "@/components/SettingsModal";
 import { DashboardSkeleton } from "@/components/DashboardSkeleton";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import {
   ScrapedProduct,
   ScrapeApiResponse,
@@ -27,6 +28,9 @@ const DEFAULT_SETTINGS: AppSettings = {
 };
 
 export default function DashboardPage() {
+  // Intro Loading Screen state
+  const [showLoading, setShowLoading] = useState<boolean>(true);
+
   // Navigation active tab
   const [activeTab, setActiveTab] = useState<"creator" | "queue">("creator");
   const [pendingCount, setPendingCount] = useState<number>(0);
@@ -69,7 +73,7 @@ export default function DashboardPage() {
   // Load client settings from localStorage on initial render & run periodic heartbeat
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("autoaffiliate_settings");
+      const saved = localStorage.getItem("prism_settings") || localStorage.getItem("autoaffiliate_settings");
       if (saved) {
         const parsed = JSON.parse(saved);
         setSettings(parsed);
@@ -91,7 +95,7 @@ export default function DashboardPage() {
   const handleSaveSettings = (newSettings: AppSettings) => {
     setSettings(newSettings);
     try {
-      localStorage.setItem("autoaffiliate_settings", JSON.stringify(newSettings));
+      localStorage.setItem("prism_settings", JSON.stringify(newSettings));
     } catch {
       // ignore
     }
@@ -203,7 +207,7 @@ export default function DashboardPage() {
       });
       refreshPendingCount();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Publishing to Telegram failed.";
+      const msg = err instanceof Error ? err.message : "Publishing failed.";
       setPublishStatus({
         success: false,
         message: msg,
@@ -213,7 +217,7 @@ export default function DashboardPage() {
     }
   };
 
-  // 3. Schedule Post to Local Queue Database
+  // 3. Schedule Post to Queue Database
   const handleSchedulePost = async (scheduledTime: string) => {
     if (!copyText.trim() || !product) return;
 
@@ -246,7 +250,7 @@ export default function DashboardPage() {
 
       setPublishStatus({
         success: true,
-        message: `Deal scheduled successfully for ${formatInKarachi(scheduledTime)}! Added to queue.`,
+        message: `Deal scheduled successfully for ${formatInKarachi(scheduledTime)}.`,
       });
       refreshPendingCount();
     } catch (err: unknown) {
@@ -265,18 +269,31 @@ export default function DashboardPage() {
     : "";
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col selection:bg-white selection:text-black">
-      {/* Header with Navigation Switcher */}
+    <div className="min-h-screen bg-[#08080C] text-white flex flex-col relative selection:bg-[#8B5CF6]/30 selection:text-white">
+      {/* Interactive Loading Screen */}
+      {showLoading && (
+        <LoadingScreen onComplete={() => setShowLoading(false)} />
+      )}
+
+      {/* Atmospheric Ambient Glow Backdrop (Matching the Prism color spectrum) */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute -top-[10%] -left-[10%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] rounded-full bg-[#E05B6C]/10 blur-[130px]" />
+        <div className="absolute top-[20%] right-[5%] w-[45vw] h-[45vw] max-w-[550px] max-h-[550px] rounded-full bg-[#8B5CF6]/12 blur-[140px]" />
+        <div className="absolute bottom-[10%] left-[20%] w-[40vw] h-[40vw] max-w-[500px] max-h-[500px] rounded-full bg-[#00E5D4]/8 blur-[120px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:24px_24px] opacity-40" />
+      </div>
+
+      {/* Header */}
       <Header
         onOpenSettings={() => setIsSettingsOpen(true)}
-        botConnected={true}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         pendingCount={pendingCount}
+        onReplayLoading={() => setShowLoading(true)}
       />
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === "creator" ? (
           isScraping ? (
             <DashboardSkeleton />
@@ -284,10 +301,10 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               {/* Left Column: Control Panel */}
               <div className="lg:col-span-5 space-y-4">
-                <div className="space-y-1 pb-1">
-                  <h1 className="text-xl font-bold tracking-tight text-white">Deal Control Panel</h1>
+                <div className="space-y-1">
+                  <h1 className="text-xl font-bold tracking-tight text-white font-prism">Deal Studio</h1>
                   <p className="text-xs text-zinc-400">
-                    Configure target URL, affiliate tags, and AI copywriting tone.
+                    Input product URL to extract metadata and refract into high-converting copy.
                   </p>
                 </div>
 
@@ -315,10 +332,10 @@ export default function DashboardPage() {
 
               {/* Right Column: Live Social Preview */}
               <div className="lg:col-span-7 space-y-4">
-                <div className="space-y-1 pb-1">
-                  <h2 className="text-xl font-bold tracking-tight text-white">Live Post Preview</h2>
+                <div className="space-y-1">
+                  <h2 className="text-xl font-bold tracking-tight text-white font-prism">Post Preview</h2>
                   <p className="text-xs text-zinc-400">
-                    Real-time Telegram post mockup with interactive buttons in Islamabad / Karachi time (PKT).
+                    Real-time visual rendering of the deal message for channel distribution.
                   </p>
                 </div>
 
@@ -333,10 +350,10 @@ export default function DashboardPage() {
           )
         ) : (
           <div className="space-y-4">
-            <div className="space-y-1 pb-1">
-              <h1 className="text-xl font-bold tracking-tight text-white">Scheduled Publishing Queue</h1>
+            <div className="space-y-1">
+              <h1 className="text-xl font-bold tracking-tight text-white font-prism">Publishing Queue</h1>
               <p className="text-xs text-zinc-400">
-                Automated release manager in Islamabad / Karachi time (PKT).
+                Automated release manager and scheduled distribution queue.
               </p>
             </div>
 
@@ -357,8 +374,12 @@ export default function DashboardPage() {
       />
 
       {/* Footer */}
-      <footer className="border-t border-zinc-900 py-5 text-center text-xs text-zinc-600">
-        AutoAffiliate &bull; Powered by Next.js 15, Gemini 3.6 Flash &amp; Local Queue Engine (PKT)
+      <footer className="relative z-10 border-t border-white/[0.06] py-6 text-center text-xs text-zinc-500">
+        <div className="flex items-center justify-center gap-3">
+          <span className="font-semibold text-zinc-400">PRISM</span>
+          <span>&bull;</span>
+          <span>Intelligent Deal Distribution</span>
+        </div>
       </footer>
     </div>
   );
