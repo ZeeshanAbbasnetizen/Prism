@@ -1,14 +1,15 @@
 import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
-import { QueuePost, QueuePostStatus } from "@/types/scraper";
+import { QueuePost, QueuePostStatus, ParsedHistoryItem } from "@/types/scraper";
 import { sendToTelegram } from "./telegram";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DB_FILE = path.join(DATA_DIR, "posts.json");
+const HISTORY_FILE = path.join(DATA_DIR, "history.json");
 
 /**
- * Ensure database file and directory exist
+ * Ensure database files and directory exist
  */
 async function ensureDb(): Promise<void> {
   try {
@@ -17,6 +18,11 @@ async function ensureDb(): Promise<void> {
       await fs.access(DB_FILE);
     } catch {
       await fs.writeFile(DB_FILE, JSON.stringify([], null, 2), "utf-8");
+    }
+    try {
+      await fs.access(HISTORY_FILE);
+    } catch {
+      await fs.writeFile(HISTORY_FILE, JSON.stringify([], null, 2), "utf-8");
     }
   } catch (err) {
     console.error("Failed to ensure DB directory:", err);
@@ -150,7 +156,6 @@ export async function processDueScheduledPosts(): Promise<{
   for (const post of posts) {
     if (post.status === "pending") {
       const scheduledTimeMs = new Date(post.scheduled_time).getTime();
-      // If scheduled time has arrived or passed
       if (scheduledTimeMs <= now) {
         try {
           console.log(`[Auto-Publisher] Processing due post: ${post.id} (${post.product_title})`);
@@ -213,4 +218,89 @@ export async function publishPostNow(id: string): Promise<QueuePost> {
     });
     throw new Error(errorMsg);
   }
+}
+
+// ----------------------------------------------------
+// PARSED PRODUCTS HISTORY MANAGEMENT
+// ----------------------------------------------------
+
+/**
+ * Read all parsed product history items
+ */
+export async function getHistory(): Promise<ParsedHistoryItem[]> {
+  await ensureDb();
+  try {
+    const raw = await fs.readFile(HISTORY_FILE, "utf-8");
+    const parsed: ParsedHistoryItem[] = JSON.parse(raw || "[]");
+    return parsed.sort(
+      (a, b) => new Date(b.parsed_at).getTime() - new Date(a.parsed_at).getTime()
+    );
+  } catch (err) {
+    console.error("Error reading history DB:", err);
+    return [];
+  }
+}
+
+/**
+ * Save history array to local JSON database
+ */
+async function saveHistory(history: ParsedHistoryItem[]): Promise<void> {
+  await ensureDb();
+  await fs.writeFile(HISTORY_FILE, JSON.stringify(history, null, 2), "utf-8");
+}
+
+/**
+ * Add or update parsed item in history
+ */
+export async function addHistoryItem(
+  item: Omit<ParsedHistoryItem, "id" | "parsed_at">
+): Promise<ParsedHistoryItem> {
+  const history = await getHistory();
+  const existingIdx = history.findIndex((h) => h.url === item.url);
+
+  const newItem: ParsedHistoryItem = {
+    id: existingIdx >= 0 ? history[existingIdx].id : crypto.randomUUID(),
+    url: item.url,
+    affiliate_url: item.affiliate_url,
+    title: item.title,
+    description: item.description,
+    image_url: item.image_url,
+    price: item.price ?? null,
+    currency: item.currency ?? null,
+    site_name: item.site_name || "Store",
+    parsed_at: new Date().toISOString(),
+    copy_generated: item.copy_generated,
+    tone: item.tone,
+  };
+
+  if (existingIdx >= 0) {
+    history[existingIdx] = newItem;
+  } else {
+    history.unshift(newItem);
+  }
+
+  // Keep up to 200 recent parsed items
+  const trimmed = history.slice(0, 200);
+  await saveHistory(trimmed);
+  return newItem;
+}
+
+/**
+ * Delete a history item
+ */
+export async function deleteHistoryItem(id: string): Promise<boolean> {
+  const history = await getHistory();
+  const filtered = history.filter((h) => h.id !== id);
+  if (filtered.length === history.length) return false;
+
+  await saveHistory(filtered);
+  return true;
+}
+
+/**
+ * Clear all history
+ */
+export async function clearHistory(): Promise<void> {
+  await ensureDb();
+  await saveHistory([]);
 }

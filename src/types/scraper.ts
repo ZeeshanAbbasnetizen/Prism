@@ -45,6 +45,31 @@ export interface ScrapedProduct {
   isFallback?: boolean;
 }
 
+export interface ParsedHistoryItem {
+  id: string;
+  url: string;
+  affiliate_url?: string;
+  title: string;
+  description?: string;
+  image_url?: string;
+  price?: string | null;
+  currency?: string | null;
+  site_name: string;
+  parsed_at: string; // ISO string
+  copy_generated?: string;
+  tone?: CopyTone;
+}
+
+export interface HistoryApiResponse {
+  success: boolean;
+  data?: ParsedHistoryItem[];
+  stats?: {
+    total: number;
+    uniqueStores: number;
+  };
+  error?: string;
+}
+
 export interface ScrapeRequest {
   url: string;
 }

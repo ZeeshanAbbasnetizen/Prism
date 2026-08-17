@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { ControlPanel } from "@/components/ControlPanel";
 import { SocialMockupPreview } from "@/components/SocialMockupPreview";
 import { QueueManager } from "@/components/QueueManager";
+import { HistoryView } from "@/components/HistoryView";
 import { SettingsModal } from "@/components/SettingsModal";
 import { DashboardSkeleton } from "@/components/DashboardSkeleton";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -14,6 +15,8 @@ import {
   GenerateCopyResponse,
   PublishTelegramResponse,
   QueueApiResponse,
+  HistoryApiResponse,
+  ParsedHistoryItem,
   CopyTone,
   AppSettings,
 } from "@/types/scraper";
@@ -31,9 +34,10 @@ export default function DashboardPage() {
   // Intro Loading Screen state
   const [showLoading, setShowLoading] = useState<boolean>(true);
 
-  // Navigation active tab
-  const [activeTab, setActiveTab] = useState<"creator" | "queue">("creator");
+  // Navigation active tab: 'creator' | 'queue' | 'history'
+  const [activeTab, setActiveTab] = useState<"creator" | "queue" | "history">("creator");
   const [pendingCount, setPendingCount] = useState<number>(0);
+  const [historyCount, setHistoryCount] = useState<number>(0);
 
   // App state
   const [url, setUrl] = useState<string>("");
@@ -57,13 +61,20 @@ export default function DashboardPage() {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
 
-  // Refresh pending count
-  const refreshPendingCount = async () => {
+  // Refresh counts
+  const refreshStats = async () => {
     try {
-      const res = await fetch("/api/queue");
-      const json: QueueApiResponse = await res.json();
-      if (json.success && json.stats) {
-        setPendingCount(json.stats.pending);
+      const [queueRes, historyRes] = await Promise.all([
+        fetch("/api/queue"),
+        fetch("/api/history"),
+      ]);
+      const queueJson: QueueApiResponse = await queueRes.json();
+      if (queueJson.success && queueJson.stats) {
+        setPendingCount(queueJson.stats.pending);
+      }
+      const historyJson: HistoryApiResponse = await historyRes.json();
+      if (historyJson.success && historyJson.data) {
+        setHistoryCount(historyJson.data.length);
       }
     } catch {
       // ignore
@@ -84,10 +95,10 @@ export default function DashboardPage() {
     } catch {
       // ignore
     }
-    refreshPendingCount();
+    refreshStats();
 
     const interval = setInterval(() => {
-      refreshPendingCount();
+      refreshStats();
     }, 10000);
     return () => clearInterval(interval);
   }, []);
@@ -130,6 +141,7 @@ export default function DashboardPage() {
 
       scrapedData = scrapeJson.data;
       setProduct(scrapedData);
+      refreshStats();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Scraping failed.";
       setError(msg);
@@ -205,9 +217,9 @@ export default function DashboardPage() {
         success: true,
         message: `Published successfully to ${data.chatTitle || "Telegram Channel"} (Message #${data.messageId})`,
       });
-      refreshPendingCount();
+      refreshStats();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Publishing failed.";
+      const msg = err instanceof Error ? err.message : "Publishing to Telegram failed.";
       setPublishStatus({
         success: false,
         message: msg,
@@ -250,9 +262,9 @@ export default function DashboardPage() {
 
       setPublishStatus({
         success: true,
-        message: `Deal scheduled successfully for ${formatInKarachi(scheduledTime)}.`,
+        message: `Deal scheduled for ${formatInKarachi(scheduledTime)}.`,
       });
-      refreshPendingCount();
+      refreshStats();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Scheduling failed.";
       setPublishStatus({
@@ -264,24 +276,42 @@ export default function DashboardPage() {
     }
   };
 
+  // Load an item from History directly into Studio
+  const handleLoadFromHistory = (item: ParsedHistoryItem) => {
+    setUrl(item.url);
+    if (item.affiliate_url) {
+      setAffiliateTag(item.affiliate_url.split("tag=")[1] || "");
+    }
+    if (item.copy_generated) {
+      setCopyText(item.copy_generated);
+    }
+    if (item.tone) {
+      setTone(item.tone);
+    }
+    setProduct({
+      url: item.url,
+      title: item.title,
+      description: item.description || "",
+      image: item.image_url || "",
+      images: item.image_url ? [item.image_url] : [],
+      price: item.price !== null && item.price !== undefined ? item.price.toString() : null,
+      currency: item.currency || "$",
+      siteName: item.site_name,
+      scrapedAt: item.parsed_at,
+    });
+    setActiveTab("creator");
+  };
+
   const finalAffiliateUrl = product
     ? appendAffiliateTag(product.url, affiliateTag || settings.defaultAffiliateTag)
     : "";
 
   return (
-    <div className="min-h-screen bg-[#08080C] text-white flex flex-col relative selection:bg-[#8B5CF6]/30 selection:text-white">
-      {/* Interactive Loading Screen */}
+    <div className="min-h-screen bg-black text-white flex flex-col selection:bg-zinc-800 selection:text-white">
+      {/* Minimalist Loading Screen */}
       {showLoading && (
         <LoadingScreen onComplete={() => setShowLoading(false)} />
       )}
-
-      {/* Atmospheric Ambient Glow Backdrop (Matching the Prism color spectrum) */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-[10%] -left-[10%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] rounded-full bg-[#E05B6C]/10 blur-[130px]" />
-        <div className="absolute top-[20%] right-[5%] w-[45vw] h-[45vw] max-w-[550px] max-h-[550px] rounded-full bg-[#8B5CF6]/12 blur-[140px]" />
-        <div className="absolute bottom-[10%] left-[20%] w-[40vw] h-[40vw] max-w-[500px] max-h-[500px] rounded-full bg-[#00E5D4]/8 blur-[120px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:24px_24px] opacity-40" />
-      </div>
 
       {/* Header */}
       <Header
@@ -289,12 +319,12 @@ export default function DashboardPage() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         pendingCount={pendingCount}
-        onReplayLoading={() => setShowLoading(true)}
+        historyCount={historyCount}
       />
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === "creator" ? (
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {activeTab === "creator" && (
           isScraping ? (
             <DashboardSkeleton />
           ) : (
@@ -302,9 +332,9 @@ export default function DashboardPage() {
               {/* Left Column: Control Panel */}
               <div className="lg:col-span-5 space-y-4">
                 <div className="space-y-1">
-                  <h1 className="text-xl font-bold tracking-tight text-white font-prism">Deal Studio</h1>
+                  <h1 className="text-lg font-bold tracking-tight text-white">Deal Studio</h1>
                   <p className="text-xs text-zinc-400">
-                    Input product URL to extract metadata and refract into high-converting copy.
+                    Input product URL to extract metadata and generate deal copy.
                   </p>
                 </div>
 
@@ -333,7 +363,7 @@ export default function DashboardPage() {
               {/* Right Column: Live Social Preview */}
               <div className="lg:col-span-7 space-y-4">
                 <div className="space-y-1">
-                  <h2 className="text-xl font-bold tracking-tight text-white font-prism">Post Preview</h2>
+                  <h2 className="text-lg font-bold tracking-tight text-white">Post Preview</h2>
                   <p className="text-xs text-zinc-400">
                     Real-time visual rendering of the deal message for channel distribution.
                   </p>
@@ -348,18 +378,36 @@ export default function DashboardPage() {
               </div>
             </div>
           )
-        ) : (
+        )}
+
+        {activeTab === "queue" && (
           <div className="space-y-4">
             <div className="space-y-1">
-              <h1 className="text-xl font-bold tracking-tight text-white font-prism">Publishing Queue</h1>
+              <h1 className="text-lg font-bold tracking-tight text-white">Publishing Queue</h1>
               <p className="text-xs text-zinc-400">
-                Automated release manager and scheduled distribution queue.
+                Scheduled deals and automated distribution manager.
               </p>
             </div>
 
             <QueueManager
               onNewDealClick={() => setActiveTab("creator")}
-              onPostPublished={refreshPendingCount}
+              onPostPublished={refreshStats}
+            />
+          </div>
+        )}
+
+        {activeTab === "history" && (
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <h1 className="text-lg font-bold tracking-tight text-white">Parsed Products History</h1>
+              <p className="text-xs text-zinc-400">
+                Archived logs of previously scraped products, metadata, and generated copy.
+              </p>
+            </div>
+
+            <HistoryView
+              onLoadInStudio={handleLoadFromHistory}
+              onRefreshStats={refreshStats}
             />
           </div>
         )}
@@ -373,12 +421,12 @@ export default function DashboardPage() {
         onSave={handleSaveSettings}
       />
 
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-white/[0.06] py-6 text-center text-xs text-zinc-500">
+      {/* Neutral Minimalist Footer */}
+      <footer className="border-t border-zinc-900 py-6 text-center text-xs text-zinc-600">
         <div className="flex items-center justify-center gap-3">
           <span className="font-semibold text-zinc-400">PRISM</span>
           <span>&bull;</span>
-          <span>Intelligent Deal Distribution</span>
+          <span>Deal Distribution Engine</span>
         </div>
       </footer>
     </div>

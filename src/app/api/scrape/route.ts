@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { scrapeProductUrl } from "@/lib/scraper";
+import { addHistoryItem } from "@/lib/db";
 import { ScrapeApiResponse } from "@/types/scraper";
 
 export async function POST(request: NextRequest): Promise<NextResponse<ScrapeApiResponse>> {
@@ -42,6 +43,21 @@ export async function POST(request: NextRequest): Promise<NextResponse<ScrapeApi
 
     // Perform metadata extraction
     const productData = await scrapeProductUrl(targetUrl);
+
+    // Save to history log
+    try {
+      await addHistoryItem({
+        url: productData.url,
+        title: productData.title,
+        description: productData.description,
+        image_url: productData.image,
+        price: productData.price ? parseFloat(productData.price) : null,
+        currency: productData.currency,
+        site_name: productData.siteName,
+      });
+    } catch (e) {
+      console.warn("Failed to record history log:", e);
+    }
 
     return NextResponse.json(
       {

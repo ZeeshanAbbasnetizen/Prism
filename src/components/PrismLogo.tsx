@@ -7,23 +7,21 @@ interface PrismLogoProps {
   className?: string;
   withText?: boolean;
   textClassName?: string;
-  animated?: boolean;
   progress?: number; // 0 to 100 for loading progress
 }
 
 export const PrismLogo: React.FC<PrismLogoProps> = ({
-  size = 28,
+  size = 24,
   className = "",
   withText = true,
   textClassName = "",
-  animated = false,
   progress,
 }) => {
   const isProgressControlled = typeof progress === "number";
   const pct = Math.min(100, Math.max(0, progress ?? 100));
 
   return (
-    <div className={`inline-flex items-center gap-3 select-none ${className}`}>
+    <div className={`inline-flex items-center gap-2.5 select-none ${className}`}>
       {/* Prism Icon */}
       <div
         className="relative flex items-center justify-center shrink-0"
@@ -33,36 +31,14 @@ export const PrismLogo: React.FC<PrismLogoProps> = ({
           viewBox="0 0 100 90"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className={`w-full h-full ${animated ? "animate-prism-pulse" : ""}`}
+          className="w-full h-full"
         >
-          <defs>
-            {/* Prism Spectrum Gradient */}
-            <linearGradient id="prismGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#F43F5E" />
-              <stop offset="35%" stopColor="#A855F7" />
-              <stop offset="70%" stopColor="#3B82F6" />
-              <stop offset="100%" stopColor="#06B6D4" />
-            </linearGradient>
-
-            <linearGradient id="prismGlow" x1="0%" y1="50%" x2="100%" y2="50%">
-              <stop offset="0%" stopColor="#E11D48" stopOpacity="0.8" />
-              <stop offset="50%" stopColor="#9333EA" stopOpacity="0.8" />
-              <stop offset="100%" stopColor="#00F5D4" stopOpacity="0.8" />
-            </linearGradient>
-
-            <filter id="prismBlur" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
-          </defs>
-
-          {/* Background subtle glow when loaded */}
-          {(!isProgressControlled || pct > 70) && (
+          {/* Subtle fill on completion */}
+          {(!isProgressControlled || pct >= 95) && (
             <polygon
               points="50,10 88,78 12,78"
-              fill="url(#prismGradient)"
-              opacity={isProgressControlled ? (pct - 70) / 150 : "0.12"}
-              className="transition-opacity duration-500"
+              fill="white"
+              opacity="0.04"
             />
           )}
 
@@ -77,8 +53,8 @@ export const PrismLogo: React.FC<PrismLogoProps> = ({
               isProgressControlled
                 ? {
                     strokeDasharray: 230,
-                    strokeDashoffset: 230 - (230 * Math.min(pct * 1.2, 100)) / 100,
-                    transition: "stroke-dashoffset 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                    strokeDashoffset: 230 - (230 * Math.min(pct * 1.15, 100)) / 100,
+                    transition: "stroke-dashoffset 0.15s ease-out",
                   }
                 : undefined
             }
@@ -90,10 +66,10 @@ export const PrismLogo: React.FC<PrismLogoProps> = ({
             y1="40"
             x2="72"
             y2="49"
-            stroke={isProgressControlled && pct > 35 ? "url(#prismGradient)" : "white"}
+            stroke="white"
             strokeWidth="4"
             strokeLinecap="round"
-            opacity={isProgressControlled ? Math.max(0, (pct - 20) / 30) : 0.95}
+            opacity={isProgressControlled ? Math.max(0, (pct - 20) / 30) : 0.9}
             style={
               isProgressControlled
                 ? {
@@ -111,10 +87,10 @@ export const PrismLogo: React.FC<PrismLogoProps> = ({
             y1="58"
             x2="80"
             y2="63"
-            stroke={isProgressControlled && pct > 55 ? "url(#prismGradient)" : "white"}
+            stroke="white"
             strokeWidth="4"
             strokeLinecap="round"
-            opacity={isProgressControlled ? Math.max(0, (pct - 45) / 30) : 0.95}
+            opacity={isProgressControlled ? Math.max(0, (pct - 45) / 30) : 0.9}
             style={
               isProgressControlled
                 ? {
@@ -132,10 +108,10 @@ export const PrismLogo: React.FC<PrismLogoProps> = ({
             y1="71"
             x2="82"
             y2="71"
-            stroke={isProgressControlled && pct > 75 ? "url(#prismGradient)" : "white"}
+            stroke="white"
             strokeWidth="4"
             strokeLinecap="round"
-            opacity={isProgressControlled ? Math.max(0, (pct - 70) / 30) : 0.95}
+            opacity={isProgressControlled ? Math.max(0, (pct - 70) / 30) : 0.9}
             style={
               isProgressControlled
                 ? {
@@ -152,8 +128,7 @@ export const PrismLogo: React.FC<PrismLogoProps> = ({
       {/* Wordmark */}
       {withText && (
         <span
-          className={`font-bold tracking-[0.28em] text-white uppercase text-sm leading-none ${textClassName}`}
-          style={{ fontFamily: "'Outfit', 'Inter', -apple-system, sans-serif" }}
+          className={`font-bold tracking-[0.24em] text-white uppercase text-xs leading-none ${textClassName}`}
         >
           PRISM
         </span>
