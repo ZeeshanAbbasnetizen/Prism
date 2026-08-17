@@ -1,18 +1,24 @@
 import path from "path";
 import fs from "fs";
+import os from "os";
 import crypto from "crypto";
 import { DatabaseSync } from "node:sqlite";
 import { QueuePost, QueuePostStatus, ParsedHistoryItem } from "@/types/scraper";
 import { sendToTelegram } from "./telegram";
 
-const DATA_DIR = path.join(process.cwd(), "data");
+const isVercel = Boolean(process.env.VERCEL);
+const DATA_DIR = isVercel ? os.tmpdir() : path.join(process.cwd(), "data");
 const DB_PATH = path.join(DATA_DIR, "prism.db");
-const LEGACY_POSTS_FILE = path.join(DATA_DIR, "posts.json");
-const LEGACY_HISTORY_FILE = path.join(DATA_DIR, "history.json");
+const LEGACY_POSTS_FILE = path.join(process.cwd(), "data", "posts.json");
+const LEGACY_HISTORY_FILE = path.join(process.cwd(), "data", "history.json");
 
 // Ensure data directory exists
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+} catch {
+  // ignore in read-only setups
 }
 
 // Global database instance singleton
@@ -20,11 +26,20 @@ let dbInstance: DatabaseSync | null = null;
 
 function getDb(): DatabaseSync {
   if (!dbInstance) {
-    dbInstance = new DatabaseSync(DB_PATH);
+    try {
+      dbInstance = new DatabaseSync(DB_PATH);
+    } catch {
+      // Fallback to in-memory if filesystem is restricted
+      dbInstance = new DatabaseSync(":memory:");
+    }
 
     // Enable WAL mode for high concurrency and performance
-    dbInstance.exec("PRAGMA journal_mode = WAL;");
-    dbInstance.exec("PRAGMA synchronous = NORMAL;");
+    try {
+      dbInstance.exec("PRAGMA journal_mode = WAL;");
+      dbInstance.exec("PRAGMA synchronous = NORMAL;");
+    } catch {
+      // ignore
+    }
 
     // Initialize Schema
     dbInstance.exec(`
@@ -54,7 +69,7 @@ function getDb(): DatabaseSync {
         title TEXT NOT NULL,
         description TEXT,
         image_url TEXT,
-        price REAL,
+        price TEXT,
         currency TEXT,
         site_name TEXT,
         parsed_at TEXT NOT NULL,
@@ -130,7 +145,7 @@ function migrateLegacyJson(db: DatabaseSync): void {
             h.title,
             h.description || null,
             h.image_url || null,
-            h.price ?? null,
+            h.price ? String(h.price) : null,
             h.currency || null,
             h.site_name || "Store",
             h.parsed_at || new Date().toISOString(),
@@ -403,7 +418,7 @@ export async function addHistoryItem(
     item.title,
     item.description || null,
     item.image_url || null,
-    item.price ?? null,
+    item.price ? String(item.price) : null,
     item.currency || null,
     item.site_name || "Store",
     parsedAt,

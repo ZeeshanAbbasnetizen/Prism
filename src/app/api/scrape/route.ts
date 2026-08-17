@@ -51,8 +51,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ScrapeApi
         title: productData.title,
         description: productData.description,
         image_url: productData.image,
-        price: productData.price ? parseFloat(productData.price) : null,
-        currency: productData.currency,
+        price: productData.price || null,
+        currency: productData.currency || null,
         site_name: productData.siteName,
       });
     } catch (e) {
