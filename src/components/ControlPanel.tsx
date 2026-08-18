@@ -3,8 +3,6 @@
 import React, { useState } from "react";
 import { CopyTone, ScrapedProduct, SocialPlatform } from "@/types/scraper";
 import {
-  Sparkles,
-  Send,
   Calendar,
   Loader2,
   Tag,
@@ -14,14 +12,21 @@ import {
   CheckCircle2,
   AlertCircle,
   Clock,
-  Heart,
-  Pin,
+  Sparkles,
 } from "lucide-react";
 import {
   getDefaultScheduleTimeKarachi,
   parseKarachiInputToIso,
 } from "@/lib/dateUtils";
 import { getPlatformDisplayName } from "@/lib/publisher";
+import {
+  PlatformLogo,
+  TelegramLogo,
+  InstagramLogo,
+  FacebookLogo,
+  PinterestLogo,
+  YouTubeLogo,
+} from "./SocialLogos";
 
 interface ControlPanelProps {
   url: string;
@@ -69,12 +74,12 @@ const TONE_OPTIONS: { id: CopyTone; label: string; description: string }[] = [
   },
 ];
 
-const PLATFORMS: { id: SocialPlatform; label: string; icon: typeof Send; color: string }[] = [
-  { id: "telegram", label: "Telegram", icon: Send, color: "text-sky-400" },
-  { id: "instagram", label: "Instagram", icon: Heart, color: "text-pink-400" },
-  { id: "facebook", label: "Facebook", icon: Globe, color: "text-blue-400" },
-  { id: "pinterest", label: "Pinterest", icon: Pin, color: "text-red-400" },
-  { id: "youtube", label: "YouTube", icon: Sparkles, color: "text-red-500" },
+const PLATFORMS: { id: SocialPlatform; label: string; Component: React.FC<{ className?: string; size?: number | string }> }[] = [
+  { id: "telegram", label: "Telegram", Component: TelegramLogo },
+  { id: "instagram", label: "Instagram", Component: InstagramLogo },
+  { id: "facebook", label: "Facebook", Component: FacebookLogo },
+  { id: "pinterest", label: "Pinterest", Component: PinterestLogo },
+  { id: "youtube", label: "YouTube", Component: YouTubeLogo },
 ];
 
 const PRESETS = [
@@ -159,32 +164,29 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
       {/* 0. Target Social Platform Selector Card */}
       <div className="p-3.5 rounded-xl border border-zinc-800 bg-zinc-950 space-y-2.5 interactive-card">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-semibold text-white flex items-center gap-1.5 font-heading">
-            <Sparkles className="w-3.5 h-3.5 text-zinc-400" />
+          <label className="text-xs font-semibold text-white flex items-center gap-2 font-heading">
+            <PlatformLogo platform={platform} className="w-4 h-4" />
             <span>Target Social Media</span>
           </label>
-          <span className="text-[10px] text-zinc-400 font-mono">
-            Optimized for {platformName}
-          </span>
         </div>
 
         {/* Platform Pills */}
         <div className="grid grid-cols-5 gap-1.5">
           {PLATFORMS.map((p) => {
-            const Icon = p.icon;
+            const Logo = p.Component;
             const isSelected = platform === p.id;
             return (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => setPlatform(p.id)}
-                className={`py-2 px-1 rounded-lg text-center flex flex-col items-center justify-center gap-1 transition-all duration-150 active:scale-95 ${
+                className={`py-2 px-1 rounded-lg text-center flex flex-col items-center justify-center gap-1.5 transition-all duration-150 active:scale-95 ${
                   isSelected
                     ? "bg-white text-black font-semibold shadow-md"
                     : "bg-black text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700"
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isSelected ? "text-black" : p.color}`} />
+                <Logo className={`w-4 h-4 ${isSelected ? "text-black" : ""}`} />
                 <span className="text-[10px] leading-none truncate w-full">{p.label}</span>
               </button>
             );
@@ -347,7 +349,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 </>
               ) : (
                 <>
-                  <Send className="w-3.5 h-3.5" />
+                  <PlatformLogo platform={platform} className="w-3.5 h-3.5 text-black" />
                   <span>Post to {platformName}</span>
                 </>
               )}

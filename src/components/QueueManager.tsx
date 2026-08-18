@@ -26,6 +26,7 @@ import {
   parseKarachiInputToIso,
 } from "@/lib/dateUtils";
 import { getPlatformDisplayName } from "@/lib/publisher";
+import { PlatformLogo } from "./SocialLogos";
 
 interface QueueManagerProps {
   onNewDealClick: () => void;
@@ -391,8 +392,8 @@ export const QueueManager: React.FC<QueueManagerProps> = ({
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       {/* Platform Badge */}
-                      <span className={`text-[10px] px-2 py-0.5 rounded border flex items-center gap-1 font-medium capitalize ${platformConfig.bg} ${platformConfig.color}`}>
-                        <PlatformIcon className="w-3 h-3" />
+                      <span className={`text-[10px] px-2 py-0.5 rounded border flex items-center gap-1.5 font-medium capitalize ${platformConfig.bg} ${platformConfig.color}`}>
+                        <PlatformLogo platform={platformKey} className="w-3.5 h-3.5" />
                         <span>{getPlatformDisplayName(platformKey)}</span>
                       </span>
 

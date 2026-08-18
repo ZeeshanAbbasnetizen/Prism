@@ -10,12 +10,14 @@ import {
   AtSign,
   Tag,
   Sliders,
-  Send,
-  Heart,
-  Globe,
-  Pin,
-  Sparkles,
 } from "lucide-react";
+import {
+  TelegramLogo,
+  InstagramLogo,
+  FacebookLogo,
+  PinterestLogo,
+  YouTubeLogo,
+} from "./SocialLogos";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -72,14 +74,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* Tab Switcher */}
         <div className="px-4 py-2 border-b border-zinc-800 bg-black/50 flex items-center gap-1 overflow-x-auto text-xs">
           {[
-            { id: "general", label: "General", icon: Sliders },
-            { id: "telegram", label: "Telegram", icon: Send },
-            { id: "instagram", label: "Instagram", icon: Heart },
-            { id: "facebook", label: "Facebook", icon: Globe },
-            { id: "pinterest", label: "Pinterest", icon: Pin },
-            { id: "youtube", label: "YouTube", icon: Sparkles },
+            { id: "general", label: "General", Component: Sliders },
+            { id: "telegram", label: "Telegram", Component: TelegramLogo },
+            { id: "instagram", label: "Instagram", Component: InstagramLogo },
+            { id: "facebook", label: "Facebook", Component: FacebookLogo },
+            { id: "pinterest", label: "Pinterest", Component: PinterestLogo },
+            { id: "youtube", label: "YouTube", Component: YouTubeLogo },
           ].map((tab) => {
-            const Icon = tab.icon;
+            const Logo = tab.Component;
             const isSelected = activeTab === tab.id;
             return (
               <button
@@ -92,7 +94,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
                 }`}
               >
-                <Icon className="w-3 h-3" />
+                <Logo className="w-3.5 h-3.5" />
                 <span>{tab.label}</span>
               </button>
             );
@@ -213,7 +215,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <div className="space-y-1">
                 <label className="flex items-center gap-1.5 font-medium text-zinc-300 text-[11px]">
-                  <Heart className="w-3 h-3 text-zinc-400" />
+                  <InstagramLogo className="w-3.5 h-3.5" />
                   <span>Instagram Business Account ID</span>
                 </label>
                 <input
@@ -246,7 +248,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <div className="space-y-1">
                 <label className="flex items-center gap-1.5 font-medium text-zinc-300 text-[11px]">
-                  <Globe className="w-3 h-3 text-zinc-400" />
+                  <FacebookLogo className="w-3.5 h-3.5" />
                   <span>Facebook Page ID</span>
                 </label>
                 <input
@@ -279,7 +281,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <div className="space-y-1">
                 <label className="flex items-center gap-1.5 font-medium text-zinc-300 text-[11px]">
-                  <Pin className="w-3 h-3 text-zinc-400" />
+                  <PinterestLogo className="w-3.5 h-3.5" />
                   <span>Pinterest Board ID</span>
                 </label>
                 <input
@@ -312,7 +314,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <div className="space-y-1">
                 <label className="flex items-center gap-1.5 font-medium text-zinc-300 text-[11px]">
-                  <Sparkles className="w-3 h-3 text-zinc-400" />
+                  <YouTubeLogo className="w-3.5 h-3.5" />
                   <span>YouTube Channel ID</span>
                 </label>
                 <input

@@ -25,6 +25,14 @@ import { getInstagramShareUrl } from "@/lib/instagram";
 import { getFacebookShareUrl } from "@/lib/facebook";
 import { getPinterestShareUrl } from "@/lib/pinterest";
 import { getYouTubeStudioUrl } from "@/lib/youtube";
+import {
+  PlatformLogo,
+  TelegramLogo,
+  InstagramLogo,
+  FacebookLogo,
+  PinterestLogo,
+  YouTubeLogo,
+} from "./SocialLogos";
 
 interface SocialMockupPreviewProps {
   product: ScrapedProduct | null;
@@ -126,14 +134,14 @@ export const SocialMockupPreview: React.FC<SocialMockupPreviewProps> = ({
         <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
           {(
             [
-              { id: "telegram", label: "Telegram", icon: Send, color: "text-sky-400" },
-              { id: "instagram", label: "Instagram", icon: Heart, color: "text-pink-400" },
-              { id: "facebook", label: "Facebook", icon: Globe, color: "text-blue-400" },
-              { id: "pinterest", label: "Pinterest", icon: Pin, color: "text-red-400" },
-              { id: "youtube", label: "YouTube", icon: Sparkles, color: "text-red-500" },
+              { id: "telegram", label: "Telegram", Component: TelegramLogo },
+              { id: "instagram", label: "Instagram", Component: InstagramLogo },
+              { id: "facebook", label: "Facebook", Component: FacebookLogo },
+              { id: "pinterest", label: "Pinterest", Component: PinterestLogo },
+              { id: "youtube", label: "YouTube", Component: YouTubeLogo },
             ] as const
           ).map((p) => {
-            const Icon = p.icon;
+            const Logo = p.Component;
             const isSelected = activePlatform === p.id;
             return (
               <button
@@ -145,7 +153,7 @@ export const SocialMockupPreview: React.FC<SocialMockupPreviewProps> = ({
                     : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
                 }`}
               >
-                <Icon className={`w-3 h-3 ${p.color}`} />
+                <Logo className="w-3.5 h-3.5" />
                 <span>{p.label}</span>
               </button>
             );
@@ -629,6 +637,7 @@ export const SocialMockupPreview: React.FC<SocialMockupPreviewProps> = ({
                 rel="noopener noreferrer"
                 className="px-3.5 py-1.5 rounded-lg bg-white text-black hover:bg-zinc-200 text-xs font-semibold flex items-center gap-1.5 transition active:scale-95 shadow-sm"
               >
+                <PlatformLogo platform={activePlatform} className="w-3.5 h-3.5 text-black" />
                 <span>Launch on {activePlatform.toUpperCase()}</span>
                 <ExternalLink className="w-3.5 h-3.5 text-black" />
               </a>
