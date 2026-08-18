@@ -3,8 +3,8 @@ import fs from "fs";
 import os from "os";
 import crypto from "crypto";
 import { DatabaseSync } from "node:sqlite";
-import { QueuePost, QueuePostStatus, ParsedHistoryItem } from "@/types/scraper";
-import { sendToTelegram } from "./telegram";
+import { QueuePost, QueuePostStatus, ParsedHistoryItem, SocialPlatform } from "@/types/scraper";
+import { publishSocialPost } from "./publisher";
 
 const isVercel = Boolean(process.env.VERCEL);
 const DATA_DIR = isVercel ? os.tmpdir() : path.join(process.cwd(), "data");
@@ -52,6 +52,8 @@ function getDb(): DatabaseSync {
         price TEXT,
         currency TEXT,
         site_name TEXT,
+        platform TEXT NOT NULL DEFAULT 'telegram',
+        target_channel TEXT,
         scheduled_time TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'pending',
         created_at TEXT NOT NULL,
@@ -61,6 +63,7 @@ function getDb(): DatabaseSync {
 
       CREATE INDEX IF NOT EXISTS idx_posts_status ON posts(status);
       CREATE INDEX IF NOT EXISTS idx_posts_scheduled_time ON posts(scheduled_time);
+      CREATE INDEX IF NOT EXISTS idx_posts_platform ON posts(platform);
 
       CREATE TABLE IF NOT EXISTS history (
         id TEXT PRIMARY KEY,
@@ -74,7 +77,8 @@ function getDb(): DatabaseSync {
         site_name TEXT,
         parsed_at TEXT NOT NULL,
         copy_generated TEXT,
-        tone TEXT
+        tone TEXT,
+        platform TEXT DEFAULT 'telegram'
       );
 
       CREATE INDEX IF NOT EXISTS idx_history_parsed_at ON history(parsed_at DESC);
@@ -84,6 +88,23 @@ function getDb(): DatabaseSync {
         value TEXT NOT NULL
       );
     `);
+
+    // Ensure columns exist for existing databases
+    try {
+      dbInstance.exec("ALTER TABLE posts ADD COLUMN platform TEXT DEFAULT 'telegram';");
+    } catch {
+      // column already exists
+    }
+    try {
+      dbInstance.exec("ALTER TABLE posts ADD COLUMN target_channel TEXT;");
+    } catch {
+      // column already exists
+    }
+    try {
+      dbInstance.exec("ALTER TABLE history ADD COLUMN platform TEXT DEFAULT 'telegram';");
+    } catch {
+      // column already exists
+    }
 
     // Migrate any legacy JSON files if they exist
     migrateLegacyJson(dbInstance);
@@ -103,9 +124,9 @@ function migrateLegacyJson(db: DatabaseSync): void {
         const stmt = db.prepare(`
           INSERT OR IGNORE INTO posts (
             id, product_title, image_url, affiliate_url, caption,
-            price, currency, site_name, scheduled_time, status,
-            created_at, updated_at, error_message
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            price, currency, site_name, platform, target_channel,
+            scheduled_time, status, created_at, updated_at, error_message
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
         for (const p of legacyPosts) {
           stmt.run(
@@ -117,6 +138,8 @@ function migrateLegacyJson(db: DatabaseSync): void {
             p.price || null,
             p.currency || null,
             p.site_name || "Store",
+            p.platform || "telegram",
+            p.target_channel || null,
             p.scheduled_time,
             p.status || "pending",
             p.created_at || new Date().toISOString(),
@@ -134,8 +157,8 @@ function migrateLegacyJson(db: DatabaseSync): void {
         const stmt = db.prepare(`
           INSERT OR IGNORE INTO history (
             id, url, affiliate_url, title, description, image_url,
-            price, currency, site_name, parsed_at, copy_generated, tone
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            price, currency, site_name, parsed_at, copy_generated, tone, platform
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
         for (const h of legacyHistory) {
           stmt.run(
@@ -150,7 +173,8 @@ function migrateLegacyJson(db: DatabaseSync): void {
             h.site_name || "Store",
             h.parsed_at || new Date().toISOString(),
             h.copy_generated || null,
-            h.tone || null
+            h.tone || null,
+            h.platform || "telegram"
           );
         }
       }
@@ -188,13 +212,14 @@ export async function createPost(
   const id = crypto.randomUUID();
   const createdAt = new Date().toISOString();
   const status = params.status || "pending";
+  const platform = params.platform || "telegram";
 
   const stmt = db.prepare(`
     INSERT INTO posts (
       id, product_title, image_url, affiliate_url, caption,
-      price, currency, site_name, scheduled_time, status,
-      created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      price, currency, site_name, platform, target_channel,
+      scheduled_time, status, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   stmt.run(
@@ -206,6 +231,8 @@ export async function createPost(
     params.price || null,
     params.currency || null,
     params.site_name || "Store",
+    platform,
+    params.target_channel || null,
     params.scheduled_time,
     status,
     createdAt
@@ -220,6 +247,8 @@ export async function createPost(
     price: params.price,
     currency: params.currency,
     site_name: params.site_name,
+    platform,
+    target_channel: params.target_channel,
     scheduled_time: params.scheduled_time,
     status,
     created_at: createdAt,
@@ -246,6 +275,8 @@ export async function updatePost(
       price = ?,
       currency = ?,
       site_name = ?,
+      platform = ?,
+      target_channel = ?,
       scheduled_time = ?,
       status = ?,
       updated_at = ?,
@@ -261,6 +292,8 @@ export async function updatePost(
     merged.price || null,
     merged.currency || null,
     merged.site_name || "Store",
+    merged.platform || "telegram",
+    merged.target_channel || null,
     merged.scheduled_time,
     merged.status,
     updatedAt,
@@ -316,20 +349,31 @@ export async function processDueScheduledPosts(): Promise<{
   let failedCount = 0;
 
   for (const post of duePosts) {
+    const platform = (post.platform || "telegram") as SocialPlatform;
     try {
-      console.log(`[Auto-Publisher] Processing due post: ${post.id} (${post.product_title})`);
-      await sendToTelegram({
+      console.log(`[Auto-Publisher] Processing due post: ${post.id} (${post.product_title}) on ${platform}`);
+      const res = await publishSocialPost({
+        platform,
         text: post.caption,
         imageUrl: post.image_url,
-        parseMode: "HTML",
+        affiliateUrl: post.affiliate_url,
+        title: post.product_title,
+        siteName: post.site_name,
+        price: post.price,
+        currency: post.currency,
       });
+
+      if (!res.success) {
+        throw new Error(res.error || `Failed to auto-publish post to ${platform}.`);
+      }
+
       await updatePost(post.id, {
         status: "published",
         error_message: undefined,
       });
       publishedCount++;
     } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : "Failed to auto-publish post.";
+      const errorMsg = err instanceof Error ? err.message : `Failed to auto-publish post to ${platform}.`;
       console.error(`[Auto-Publisher] Failed to publish post ${post.id}:`, errorMsg);
       await updatePost(post.id, {
         status: "failed",
@@ -352,12 +396,23 @@ export async function publishPostNow(id: string): Promise<QueuePost> {
     throw new Error(`Post with ID ${id} not found.`);
   }
 
+  const platform = (post.platform || "telegram") as SocialPlatform;
+
   try {
-    await sendToTelegram({
+    const res = await publishSocialPost({
+      platform,
       text: post.caption,
       imageUrl: post.image_url,
-      parseMode: "HTML",
+      affiliateUrl: post.affiliate_url,
+      title: post.product_title,
+      siteName: post.site_name,
+      price: post.price,
+      currency: post.currency,
     });
+
+    if (!res.success) {
+      throw new Error(res.error || `Failed to publish post to ${platform}.`);
+    }
 
     const updated = await updatePost(id, {
       status: "published",
@@ -365,7 +420,7 @@ export async function publishPostNow(id: string): Promise<QueuePost> {
     });
     return updated!;
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Failed to publish post.";
+    const errorMsg = err instanceof Error ? err.message : `Failed to publish post to ${platform}.`;
     await updatePost(id, {
       status: "failed",
       error_message: errorMsg,
@@ -393,12 +448,13 @@ export async function addHistoryItem(
 
   const id = existing ? existing.id : crypto.randomUUID();
   const parsedAt = new Date().toISOString();
+  const platform = item.platform || "telegram";
 
   const stmt = db.prepare(`
     INSERT INTO history (
       id, url, affiliate_url, title, description, image_url,
-      price, currency, site_name, parsed_at, copy_generated, tone
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      price, currency, site_name, parsed_at, copy_generated, tone, platform
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(url) DO UPDATE SET
       title = excluded.title,
       description = excluded.description,
@@ -408,7 +464,8 @@ export async function addHistoryItem(
       site_name = excluded.site_name,
       parsed_at = excluded.parsed_at,
       copy_generated = coalesce(excluded.copy_generated, history.copy_generated),
-      tone = coalesce(excluded.tone, history.tone)
+      tone = coalesce(excluded.tone, history.tone),
+      platform = coalesce(excluded.platform, history.platform)
   `);
 
   stmt.run(
@@ -423,7 +480,8 @@ export async function addHistoryItem(
     item.site_name || "Store",
     parsedAt,
     item.copy_generated || null,
-    item.tone || null
+    item.tone || null,
+    platform
   );
 
   return {
@@ -439,6 +497,7 @@ export async function addHistoryItem(
     parsed_at: parsedAt,
     copy_generated: item.copy_generated,
     tone: item.tone,
+    platform,
   };
 }
 

@@ -1,5 +1,7 @@
 export type CopyTone = "urgent" | "features" | "minimal" | "story";
 
+export type SocialPlatform = "telegram" | "instagram" | "facebook" | "pinterest" | "youtube";
+
 export type QueuePostStatus = "pending" | "published" | "failed";
 
 export interface QueuePost {
@@ -11,6 +13,8 @@ export interface QueuePost {
   price?: string | null;
   currency?: string | null;
   site_name?: string;
+  platform?: SocialPlatform;
+  target_channel?: string | null;
   scheduled_time: string; // ISO datetime string
   status: QueuePostStatus;
   created_at: string; // ISO datetime string
@@ -58,6 +62,7 @@ export interface ParsedHistoryItem {
   parsed_at: string; // ISO string
   copy_generated?: string;
   tone?: CopyTone;
+  platform?: SocialPlatform;
 }
 
 export interface HistoryApiResponse {
@@ -90,12 +95,14 @@ export interface GenerateCopyRequest {
   siteName?: string;
   affiliateTag?: string;
   tone?: CopyTone;
+  platform?: SocialPlatform;
   customApiKey?: string;
 }
 
 export interface GenerateCopyResponse {
   success: boolean;
   copy?: string;
+  platform?: SocialPlatform;
   error?: string;
 }
 
@@ -114,9 +121,60 @@ export interface PublishTelegramResponse {
   error?: string;
 }
 
+export interface PublishSocialRequest {
+  platform: SocialPlatform;
+  text: string;
+  imageUrl?: string;
+  affiliateUrl?: string;
+  title?: string;
+  siteName?: string;
+  price?: string | null;
+  currency?: string | null;
+  // Platform specific overrides
+  telegramChatId?: string;
+  telegramBotToken?: string;
+  instagramAccessToken?: string;
+  instagramAccountId?: string;
+  facebookPageAccessToken?: string;
+  facebookPageId?: string;
+  pinterestAccessToken?: string;
+  pinterestBoardId?: string;
+  youtubeApiKey?: string;
+  youtubeChannelId?: string;
+}
+
+export interface PublishSocialResponse {
+  success: boolean;
+  platform: SocialPlatform;
+  messageId?: string | number;
+  targetTitle?: string;
+  postUrl?: string;
+  shareIntentUrl?: string;
+  error?: string;
+}
+
 export interface AppSettings {
   geminiApiKey: string;
+  defaultAffiliateTag: string;
+  defaultPlatform: SocialPlatform;
+
+  // Telegram
   telegramBotToken: string;
   telegramChatId: string;
-  defaultAffiliateTag: string;
+
+  // Instagram
+  instagramAccessToken: string;
+  instagramAccountId: string;
+
+  // Facebook
+  facebookPageAccessToken: string;
+  facebookPageId: string;
+
+  // Pinterest
+  pinterestAccessToken: string;
+  pinterestBoardId: string;
+
+  // YouTube
+  youtubeApiKey: string;
+  youtubeChannelId: string;
 }

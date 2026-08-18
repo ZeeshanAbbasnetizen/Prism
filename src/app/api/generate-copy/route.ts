@@ -22,6 +22,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateC
       {
         success: true,
         copy,
+        platform: body.platform || "telegram",
       },
       { status: 200 }
     );

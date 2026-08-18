@@ -6,8 +6,9 @@ dotenv.config({ path: path.join(process.cwd(), ".env.local") });
 dotenv.config();
 
 import { getPosts, updatePost } from "../src/lib/db";
-import { sendToTelegram } from "../src/lib/telegram";
+import { publishSocialPost } from "../src/lib/publisher";
 import { formatInKarachi } from "../src/lib/dateUtils";
+import { SocialPlatform } from "../src/types/scraper";
 
 interface WorkerRunResult {
   totalChecked: number;
@@ -22,7 +23,7 @@ interface WorkerRunResult {
 export async function runSchedulerWorker(): Promise<WorkerRunResult> {
   const startTime = new Date();
   console.log(`\n======================================================`);
-  console.log(`[Worker] Running scheduled deal dispatcher...`);
+  console.log(`[Worker] Running multi-platform deal dispatcher...`);
   console.log(`[Worker] Current Time: ${formatInKarachi(startTime.toISOString())}`);
   console.log(`======================================================`);
 
@@ -50,21 +51,28 @@ export async function runSchedulerWorker(): Promise<WorkerRunResult> {
   }
 
   for (const post of duePosts) {
+    const platform = (post.platform || "telegram") as SocialPlatform;
     console.log(`\n------------------------------------------------------`);
     console.log(`[Worker] Publishing Post ID: ${post.id}`);
+    console.log(`[Worker] Platform: ${platform.toUpperCase()}`);
     console.log(`[Worker] Product: "${post.product_title}"`);
     console.log(`[Worker] Scheduled For: ${formatInKarachi(post.scheduled_time)}`);
     console.log(`[Worker] Store: ${post.site_name || "Store"}`);
 
     try {
-      const result = await sendToTelegram({
+      const result = await publishSocialPost({
+        platform,
         text: post.caption,
         imageUrl: post.image_url,
-        parseMode: "HTML",
+        affiliateUrl: post.affiliate_url,
+        title: post.product_title,
+        siteName: post.site_name,
+        price: post.price,
+        currency: post.currency,
       });
 
       if (!result.success) {
-        throw new Error(result.error || "Failed to deliver message to Telegram.");
+        throw new Error(result.error || `Failed to deliver post to ${platform}.`);
       }
 
       await updatePost(post.id, {
@@ -73,9 +81,9 @@ export async function runSchedulerWorker(): Promise<WorkerRunResult> {
       });
 
       published++;
-      console.log(`[Worker] ✓ SUCCESS: Post delivered to Telegram! (Message ID: ${result.messageId})`);
+      console.log(`[Worker] ✓ SUCCESS: Post delivered to ${platform}! (Message ID: ${result.messageId})`);
     } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : "Failed to publish post.";
+      const errorMsg = err instanceof Error ? err.message : `Failed to publish post to ${platform}.`;
       console.error(`[Worker] ✗ FAILED: ${errorMsg}`);
 
       await updatePost(post.id, {

@@ -59,6 +59,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<QueueApiR
       price: body.price || null,
       currency: body.currency || null,
       site_name: body.site_name || "Store",
+      platform: body.platform || "telegram",
+      target_channel: body.target_channel || null,
       scheduled_time: body.scheduled_time,
     });
 
@@ -153,6 +155,8 @@ export async function PATCH(request: NextRequest): Promise<NextResponse<QueueApi
     const updated = await updatePost(body.id, {
       caption: body.caption,
       scheduled_time: body.scheduled_time,
+      platform: body.platform,
+      target_channel: body.target_channel,
       status: body.status,
     });
 

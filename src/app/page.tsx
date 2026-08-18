@@ -13,21 +13,32 @@ import {
   ScrapedProduct,
   ScrapeApiResponse,
   GenerateCopyResponse,
-  PublishTelegramResponse,
+  PublishSocialResponse,
   QueueApiResponse,
   HistoryApiResponse,
   ParsedHistoryItem,
   CopyTone,
+  SocialPlatform,
   AppSettings,
 } from "@/types/scraper";
 import { appendAffiliateTag } from "@/lib/gemini";
 import { formatInKarachi } from "@/lib/dateUtils";
+import { getPlatformDisplayName } from "@/lib/publisher";
 
 const DEFAULT_SETTINGS: AppSettings = {
   geminiApiKey: "",
+  defaultAffiliateTag: "",
+  defaultPlatform: "telegram",
   telegramBotToken: "",
   telegramChatId: "",
-  defaultAffiliateTag: "",
+  instagramAccessToken: "",
+  instagramAccountId: "",
+  facebookPageAccessToken: "",
+  facebookPageId: "",
+  pinterestAccessToken: "",
+  pinterestBoardId: "",
+  youtubeApiKey: "",
+  youtubeChannelId: "",
 };
 
 export default function DashboardPage() {
@@ -43,6 +54,7 @@ export default function DashboardPage() {
   const [url, setUrl] = useState<string>("");
   const [affiliateTag, setAffiliateTag] = useState<string>("");
   const [tone, setTone] = useState<CopyTone>("urgent");
+  const [platform, setPlatform] = useState<SocialPlatform>("telegram");
   const [copyText, setCopyText] = useState<string>("");
   const [product, setProduct] = useState<ScrapedProduct | null>(null);
 
@@ -87,9 +99,12 @@ export default function DashboardPage() {
       const saved = localStorage.getItem("prism_settings") || localStorage.getItem("autoaffiliate_settings");
       if (saved) {
         const parsed = JSON.parse(saved);
-        setSettings(parsed);
+        setSettings((prev) => ({ ...prev, ...parsed }));
         if (parsed.defaultAffiliateTag) {
           setAffiliateTag(parsed.defaultAffiliateTag);
+        }
+        if (parsed.defaultPlatform) {
+          setPlatform(parsed.defaultPlatform);
         }
       }
     } catch {
@@ -113,35 +128,40 @@ export default function DashboardPage() {
     if (newSettings.defaultAffiliateTag && !affiliateTag) {
       setAffiliateTag(newSettings.defaultAffiliateTag);
     }
+    if (newSettings.defaultPlatform) {
+      setPlatform(newSettings.defaultPlatform);
+    }
   };
 
   // 1. Scrape & Generate Copy Pipeline
-  const handleScrapeAndGenerate = async () => {
+  const handleScrapeAndGenerate = async (targetPlatform: SocialPlatform = platform) => {
     if (!url.trim()) return;
 
     setIsScraping(true);
     setError(null);
     setPublishStatus(null);
 
-    let scrapedData: ScrapedProduct | null = null;
+    let scrapedData: ScrapedProduct | null = product;
 
     try {
-      // Step A: Scrape URL
-      const scrapeRes = await fetch("/api/scrape", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim() }),
-      });
+      // Step A: Scrape URL if new or not yet loaded
+      if (!product || product.url !== url.trim()) {
+        const scrapeRes = await fetch("/api/scrape", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: url.trim() }),
+        });
 
-      const scrapeJson: ScrapeApiResponse = await scrapeRes.json();
+        const scrapeJson: ScrapeApiResponse = await scrapeRes.json();
 
-      if (!scrapeRes.ok || !scrapeJson.success || !scrapeJson.data) {
-        throw new Error(scrapeJson.error || "Failed to extract product metadata.");
+        if (!scrapeRes.ok || !scrapeJson.success || !scrapeJson.data) {
+          throw new Error(scrapeJson.error || "Failed to extract product metadata.");
+        }
+
+        scrapedData = scrapeJson.data;
+        setProduct(scrapedData);
+        refreshStats();
       }
-
-      scrapedData = scrapeJson.data;
-      setProduct(scrapedData);
-      refreshStats();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Scraping failed.";
       setError(msg);
@@ -151,7 +171,7 @@ export default function DashboardPage() {
       setIsScraping(false);
     }
 
-    // Step B: Generate AI Copy
+    // Step B: Generate AI Copy for Target Platform
     if (scrapedData) {
       setIsGenerating(true);
       try {
@@ -167,6 +187,7 @@ export default function DashboardPage() {
             siteName: scrapedData.siteName,
             affiliateTag: affiliateTag.trim() || settings.defaultAffiliateTag || undefined,
             tone,
+            platform: targetPlatform,
             customApiKey: settings.geminiApiKey || undefined,
           }),
         });
@@ -187,39 +208,64 @@ export default function DashboardPage() {
     }
   };
 
-  // 2. Publish to Telegram Immediately
-  const handlePublishTelegram = async () => {
+  // Switch platform and automatically re-generate tailored copy if product is loaded
+  const handlePlatformChange = (newPlatform: SocialPlatform) => {
+    setPlatform(newPlatform);
+    if (product) {
+      handleScrapeAndGenerate(newPlatform);
+    }
+  };
+
+  // 2. Publish to Target Platform Immediately
+  const handlePublish = async (targetPlatform: SocialPlatform = platform) => {
     if (!copyText.trim() || !product) return;
 
     setIsPublishing(true);
     setPublishStatus(null);
 
+    const platformName = getPlatformDisplayName(targetPlatform);
+    const finalUrl = appendAffiliateTag(product.url, affiliateTag || settings.defaultAffiliateTag);
+
     try {
-      const res = await fetch("/api/publish-telegram", {
+      const res = await fetch("/api/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          platform: targetPlatform,
           text: copyText.trim(),
           imageUrl: product.image,
-          chatId: settings.telegramChatId || undefined,
-          botToken: settings.telegramBotToken || undefined,
-          parseMode: "HTML",
+          affiliateUrl: finalUrl,
+          title: product.title,
+          siteName: product.siteName,
+          price: product.price,
+          currency: product.currency,
+          // Pass any custom settings
+          telegramChatId: settings.telegramChatId || undefined,
+          telegramBotToken: settings.telegramBotToken || undefined,
+          instagramAccessToken: settings.instagramAccessToken || undefined,
+          instagramAccountId: settings.instagramAccountId || undefined,
+          facebookPageAccessToken: settings.facebookPageAccessToken || undefined,
+          facebookPageId: settings.facebookPageId || undefined,
+          pinterestAccessToken: settings.pinterestAccessToken || undefined,
+          pinterestBoardId: settings.pinterestBoardId || undefined,
+          youtubeApiKey: settings.youtubeApiKey || undefined,
+          youtubeChannelId: settings.youtubeChannelId || undefined,
         }),
       });
 
-      const data: PublishTelegramResponse = await res.json();
+      const data: PublishSocialResponse = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to publish to Telegram.");
+        throw new Error(data.error || `Failed to publish to ${platformName}.`);
       }
 
       setPublishStatus({
         success: true,
-        message: `Published successfully to ${data.chatTitle || "Telegram Channel"} (Message #${data.messageId})`,
+        message: `Successfully posted to ${platformName}! ${data.targetTitle ? `(${data.targetTitle})` : ""}`,
       });
       refreshStats();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Publishing to Telegram failed.";
+      const msg = err instanceof Error ? err.message : `Publishing to ${platformName} failed.`;
       setPublishStatus({
         success: false,
         message: msg,
@@ -230,11 +276,13 @@ export default function DashboardPage() {
   };
 
   // 3. Schedule Post to Queue Database
-  const handleSchedulePost = async (scheduledTime: string) => {
+  const handleSchedulePost = async (scheduledTime: string, targetPlatform: SocialPlatform = platform) => {
     if (!copyText.trim() || !product) return;
 
     setIsScheduling(true);
     setPublishStatus(null);
+
+    const platformName = getPlatformDisplayName(targetPlatform);
 
     try {
       const finalUrl = appendAffiliateTag(product.url, affiliateTag || settings.defaultAffiliateTag);
@@ -250,6 +298,7 @@ export default function DashboardPage() {
           price: product.price,
           currency: product.currency,
           site_name: product.siteName,
+          platform: targetPlatform,
           scheduled_time: scheduledTime,
         }),
       });
@@ -257,12 +306,12 @@ export default function DashboardPage() {
       const data: QueueApiResponse = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to schedule deal.");
+        throw new Error(data.error || `Failed to schedule ${platformName} deal.`);
       }
 
       setPublishStatus({
         success: true,
-        message: `Deal scheduled for ${formatInKarachi(scheduledTime)}.`,
+        message: `${platformName} deal scheduled for ${formatInKarachi(scheduledTime)}.`,
       });
       refreshStats();
     } catch (err: unknown) {
@@ -287,6 +336,9 @@ export default function DashboardPage() {
     }
     if (item.tone) {
       setTone(item.tone);
+    }
+    if (item.platform) {
+      setPlatform(item.platform);
     }
     setProduct({
       url: item.url,
@@ -332,9 +384,11 @@ export default function DashboardPage() {
               {/* Left Column: Control Panel */}
               <div className="lg:col-span-5 space-y-4">
                 <div className="space-y-1">
-                  <h1 className="text-lg font-bold tracking-tight text-white">Deal Studio</h1>
+                  <h1 className="text-lg font-bold tracking-tight text-white font-heading">
+                    Multi-Platform Deal Studio
+                  </h1>
                   <p className="text-xs text-zinc-400">
-                    Input product URL to extract metadata and generate deal copy.
+                    Input product URL to extract metadata and generate tailored copy for Telegram, Instagram, Facebook, Pinterest, or YouTube.
                   </p>
                 </div>
 
@@ -345,10 +399,12 @@ export default function DashboardPage() {
                   setAffiliateTag={setAffiliateTag}
                   tone={tone}
                   setTone={setTone}
+                  platform={platform}
+                  setPlatform={handlePlatformChange}
                   copyText={copyText}
                   setCopyText={setCopyText}
-                  onScrapeAndGenerate={handleScrapeAndGenerate}
-                  onPublishTelegram={handlePublishTelegram}
+                  onScrapeAndGenerate={() => handleScrapeAndGenerate(platform)}
+                  onPublish={handlePublish}
                   onSchedulePost={handleSchedulePost}
                   isScraping={isScraping}
                   isGenerating={isGenerating}
@@ -363,9 +419,11 @@ export default function DashboardPage() {
               {/* Right Column: Live Social Preview */}
               <div className="lg:col-span-7 space-y-4">
                 <div className="space-y-1">
-                  <h2 className="text-lg font-bold tracking-tight text-white">Post Preview</h2>
+                  <h2 className="text-lg font-bold tracking-tight text-white font-heading">
+                    Channel &amp; Feed Simulation
+                  </h2>
                   <p className="text-xs text-zinc-400">
-                    Real-time visual rendering of the deal message for channel distribution.
+                    Real-time visual rendering of the deal post for your selected social media channel.
                   </p>
                 </div>
 
@@ -374,6 +432,8 @@ export default function DashboardPage() {
                   copyText={copyText}
                   settings={settings}
                   finalAffiliateUrl={finalAffiliateUrl}
+                  selectedPlatform={platform}
+                  onPlatformChange={handlePlatformChange}
                 />
               </div>
             </div>
@@ -383,9 +443,11 @@ export default function DashboardPage() {
         {activeTab === "queue" && (
           <div className="space-y-4">
             <div className="space-y-1">
-              <h1 className="text-lg font-bold tracking-tight text-white">Publishing Queue</h1>
+              <h1 className="text-lg font-bold tracking-tight text-white font-heading">
+                Multi-Platform Publishing Queue
+              </h1>
               <p className="text-xs text-zinc-400">
-                Scheduled deals and automated distribution manager.
+                Scheduled deals and automated distribution manager across all connected social channels.
               </p>
             </div>
 
@@ -399,7 +461,9 @@ export default function DashboardPage() {
         {activeTab === "history" && (
           <div className="space-y-4">
             <div className="space-y-1">
-              <h1 className="text-lg font-bold tracking-tight text-white">Parsed Products History</h1>
+              <h1 className="text-lg font-bold tracking-tight text-white font-heading">
+                Parsed Products History
+              </h1>
               <p className="text-xs text-zinc-400">
                 Archived logs of previously scraped products, metadata, and generated copy.
               </p>
@@ -421,12 +485,12 @@ export default function DashboardPage() {
         onSave={handleSaveSettings}
       />
 
-      {/* Neutral Minimalist Footer */}
+      {/* Minimalist Footer */}
       <footer className="border-t border-zinc-900 py-6 text-center text-xs text-zinc-600">
         <div className="flex items-center justify-center gap-3">
           <span className="font-semibold text-zinc-400">PRISM</span>
           <span>&bull;</span>
-          <span>Deal Distribution Engine</span>
+          <span>Multi-Platform Deal Distribution Engine (Telegram, Instagram, Facebook, Pinterest, YouTube)</span>
         </div>
       </footer>
     </div>

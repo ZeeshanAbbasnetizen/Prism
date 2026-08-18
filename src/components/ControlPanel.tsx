@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { CopyTone, ScrapedProduct } from "@/types/scraper";
+import { CopyTone, ScrapedProduct, SocialPlatform } from "@/types/scraper";
 import {
   Sparkles,
   Send,
@@ -14,11 +14,14 @@ import {
   CheckCircle2,
   AlertCircle,
   Clock,
+  Heart,
+  Pin,
 } from "lucide-react";
 import {
   getDefaultScheduleTimeKarachi,
   parseKarachiInputToIso,
 } from "@/lib/dateUtils";
+import { getPlatformDisplayName } from "@/lib/publisher";
 
 interface ControlPanelProps {
   url: string;
@@ -27,11 +30,13 @@ interface ControlPanelProps {
   setAffiliateTag: (val: string) => void;
   tone: CopyTone;
   setTone: (val: CopyTone) => void;
+  platform: SocialPlatform;
+  setPlatform: (val: SocialPlatform) => void;
   copyText: string;
   setCopyText: (val: string) => void;
   onScrapeAndGenerate: () => Promise<void>;
-  onPublishTelegram: () => Promise<void>;
-  onSchedulePost: (scheduledTime: string) => Promise<void>;
+  onPublish: (platform: SocialPlatform) => Promise<void>;
+  onSchedulePost: (scheduledTime: string, platform: SocialPlatform) => Promise<void>;
   isScraping: boolean;
   isGenerating: boolean;
   isPublishing: boolean;
@@ -62,6 +67,14 @@ const TONE_OPTIONS: { id: CopyTone; label: string; description: string }[] = [
     label: "Story Review",
     description: "Authentic enthusiast & micro-review angle",
   },
+];
+
+const PLATFORMS: { id: SocialPlatform; label: string; icon: typeof Send; color: string }[] = [
+  { id: "telegram", label: "Telegram", icon: Send, color: "text-sky-400" },
+  { id: "instagram", label: "Instagram", icon: Heart, color: "text-pink-400" },
+  { id: "facebook", label: "Facebook", icon: Globe, color: "text-blue-400" },
+  { id: "pinterest", label: "Pinterest", icon: Pin, color: "text-red-400" },
+  { id: "youtube", label: "YouTube", icon: Sparkles, color: "text-red-500" },
 ];
 
 const PRESETS = [
@@ -98,10 +111,12 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   setAffiliateTag,
   tone,
   setTone,
+  platform,
+  setPlatform,
   copyText,
   setCopyText,
   onScrapeAndGenerate,
-  onPublishTelegram,
+  onPublish,
   onSchedulePost,
   isScraping,
   isGenerating,
@@ -129,7 +144,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     e.preventDefault();
     if (!scheduleTime) return;
     const isoString = parseKarachiInputToIso(scheduleTime);
-    await onSchedulePost(isoString);
+    await onSchedulePost(isoString, platform);
     setShowScheduleModal(false);
   };
 
@@ -137,8 +152,46 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     setScheduleTime(getDefaultScheduleTimeKarachi(minutesAhead));
   };
 
+  const platformName = getPlatformDisplayName(platform);
+
   return (
     <div className="w-full space-y-3.5 animate-fade-in-scale">
+      {/* 0. Target Social Platform Selector Card */}
+      <div className="p-3.5 rounded-xl border border-zinc-800 bg-zinc-950 space-y-2.5 interactive-card">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-semibold text-white flex items-center gap-1.5 font-heading">
+            <Sparkles className="w-3.5 h-3.5 text-zinc-400" />
+            <span>Target Social Media</span>
+          </label>
+          <span className="text-[10px] text-zinc-400 font-mono">
+            Optimized for {platformName}
+          </span>
+        </div>
+
+        {/* Platform Pills */}
+        <div className="grid grid-cols-5 gap-1.5">
+          {PLATFORMS.map((p) => {
+            const Icon = p.icon;
+            const isSelected = platform === p.id;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setPlatform(p.id)}
+                className={`py-2 px-1 rounded-lg text-center flex flex-col items-center justify-center gap-1 transition-all duration-150 active:scale-95 ${
+                  isSelected
+                    ? "bg-white text-black font-semibold shadow-md"
+                    : "bg-black text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700"
+                }`}
+              >
+                <Icon className={`w-4 h-4 ${isSelected ? "text-black" : p.color}`} />
+                <span className="text-[10px] leading-none truncate w-full">{p.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* 1. URL & Store Input Card */}
       <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950 space-y-3 interactive-card">
         <div className="flex items-center justify-between">
@@ -235,12 +288,16 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         {isScraping || isGenerating ? (
           <>
             <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
-            <span>{isScraping ? "Parsing Product..." : "Generating Copy..."}</span>
+            <span>{isScraping ? "Parsing Product..." : `Generating ${platformName} Copy...`}</span>
           </>
         ) : (
           <>
             <Sparkles className="w-3.5 h-3.5 transition-transform group-hover:rotate-12" />
-            <span>{product ? "Regenerate Deal Copy" : "Parse & Generate Copy"}</span>
+            <span>
+              {product
+                ? `Regenerate for ${platformName}`
+                : `Parse & Generate for ${platformName}`}
+            </span>
           </>
         )}
       </button>
@@ -262,9 +319,9 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           <div className="flex items-center justify-between text-xs text-zinc-400">
             <span className="flex items-center gap-1.5 font-medium text-zinc-200 font-heading">
               <Edit3 className="w-3.5 h-3.5 text-zinc-400" />
-              <span>Deal Copy</span>
+              <span>Deal Copy ({platformName})</span>
             </span>
-            <span className="text-[10px] text-zinc-500 font-mono">HTML Live Sync</span>
+            <span className="text-[10px] text-zinc-500 font-mono">Live Sync</span>
           </div>
 
           <textarea
@@ -272,14 +329,14 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             onChange={(e) => setCopyText(e.target.value)}
             rows={8}
             className="w-full p-3 rounded-lg bg-black border border-zinc-800 text-zinc-200 text-xs font-mono leading-relaxed input-interactive resize-none"
-            placeholder="Generated deal copy..."
+            placeholder={`Generated ${platformName} copy...`}
           />
 
           {/* Publishing & Scheduling Buttons */}
           <div className="grid grid-cols-2 gap-2 pt-1">
             <button
               type="button"
-              onClick={onPublishTelegram}
+              onClick={() => onPublish(platform)}
               disabled={isPublishing || !copyText.trim()}
               className="py-2.5 rounded-lg bg-white text-black hover:bg-zinc-200 font-medium text-xs flex items-center justify-center gap-1.5 btn-interactive disabled:opacity-40 shadow-sm"
             >
@@ -291,7 +348,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               ) : (
                 <>
                   <Send className="w-3.5 h-3.5" />
-                  <span>Publish Now</span>
+                  <span>Post to {platformName}</span>
                 </>
               )}
             </button>
@@ -313,7 +370,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               ) : (
                 <>
                   <Calendar className="w-3.5 h-3.5 text-zinc-400" />
-                  <span>Schedule</span>
+                  <span>Schedule Deal</span>
                 </>
               )}
             </button>
@@ -349,7 +406,9 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-white" />
-                <h3 className="text-sm font-semibold text-white font-heading">Schedule Release</h3>
+                <h3 className="text-sm font-semibold text-white font-heading">
+                  Schedule {platformName} Release
+                </h3>
               </div>
               <button
                 onClick={() => setShowScheduleModal(false)}
@@ -361,7 +420,12 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
             <form onSubmit={handleScheduleSubmit} className="space-y-4 text-xs">
               <div className="space-y-2">
-                <label className="text-zinc-400 font-medium">Release Time</label>
+                <div className="p-2.5 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-between text-zinc-300">
+                  <span>Platform:</span>
+                  <span className="font-semibold text-white capitalize">{platformName}</span>
+                </div>
+
+                <label className="text-zinc-400 font-medium block">Release Time</label>
                 <input
                   type="datetime-local"
                   value={scheduleTime}
